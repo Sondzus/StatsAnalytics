@@ -1,0 +1,45 @@
+---
+title: "Homework, worksheet, and lab template"
+author: "Your Name Here"
+date: Prepared for  ITMD/ITMS/STAT 514, Spring 2021
+output: pdf_document
+urlcolor: magenta
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,comment = '', fig.width = 3, fig.height = 3
+  )
+```
+
+
+```{r message=FALSE}
+# We'll list any librareis  we need to use for the document here. 
+```
+
+### 1.  Hello World!
+
+Here's an R code chunk that prints the text 'Hello world!'.
+
+```{r}
+print("Hello world!")
+```
+
+### 2. Loading data
+
+For this example we'll use a very simple dataset.  The `cars` data comes with the default installation of R.  To see the first few columns of the data, just type `head(cars)`.
+
+```{r}
+plot(cars)
+```
+
+.... Note: this is **not** a good plot. What is it? What's the headline? 
+Let's try again. 
+
+```{r}
+plot(cars, 
+     main="Here's the title of the plot",
+     xlab="I changed the x label :)")
+```
+
