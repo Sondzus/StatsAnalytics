@@ -9,7 +9,7 @@ Some of the notes for course materials on Applied Computational Statistcs for An
 
 ## Types of files
 
-* html - course handouts. **Note** To preview within the browser, prepend `https://htmlpreview.github.io/?` to the path in your browser, such as [here](https://htmlpreview.github.io/?https://github.com/Sondzus/MathStats/blob/main/563-SamplingDistributions.html) 
+* html - course handouts. **Note** To preview within the browser, prepend `https://htmlpreview.github.io/?` to the path in your browser, such as [here](https://htmlpreview.github.io/?https://github.com/Sondzus/StatsAnalytics/blob/master/514-1.1-handout-DescriptiveStatistics.html) 
 * PDF - slides for short illustrations used within a live lecture
 * Rmd - raw R Markdown code for studetns to see how the basic HTML is generated.  
 
