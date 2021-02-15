@@ -14,6 +14,15 @@ Some of the notes for course materials on Applied Computational Statistcs for An
 * Rmd - raw R Markdown code for studetns to see how the basic HTML is generated.  
 
 
+## Schedule 
+Week 1 - Reasoning with data / framework for viewing data 
+	- Interlude: create your first .Rmd file
+Week 2 - Types of random variables, measures of location and scale, basic summary statistics 
+	- Interlude: Overview of R&Python, packages, scripts, loading, basics, importing an example data set
+Week 3 - Sampling distributions 
+	- Interlude: Overview of Markdown and basic R functionality  
+Week 4 - The link between sampling distributions, inference, analytics, EDA 
+	- Interlude: functions in R. 
 
 ## License
 This document  is created for ITMD/ITMS/STAT 514, Spring 2021, at Illinois Tech. 
