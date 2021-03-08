@@ -2,7 +2,7 @@
 title: "Homework, worksheet, and lab template"
 author: "Your Name Here"
 date: Prepared for  ITMD/ITMS/STAT 514, Spring 2021
-output: pdf_document
+output: html_document
 urlcolor: magenta
 ---
 
@@ -14,32 +14,79 @@ knitr::opts_chunk$set(
 ```
 
 
+# Setup
+
+
+### Changing the author field and file name.
+
+* (a) Change the `author:` field on the Rmd document from Your Name Here to your own name.
+
+* (b) Rename this file to "hwX_YourHameHere.Rmd", where YourNameHere is changed to your own name.
+
+# Cleanup 
+Once you are done with this setup, updating the author and date fields, **delete** the *Setup* and the *Cleanup* sections of this document! 
+
+
+##  Packages
+
 ```{r message=FALSE}
-# We'll list any librareis  we need to use for the document here. 
+# add packages you need for this assignment
+library(tidyverse) 
 ```
 
-### 1.  Hello World!
 
-Here's an R code chunk that prints the text 'Hello world!'.
+----- 
+
+
+# Preparation (in-class and group work)
+
+ We talked about basic results on sampling distributions: for a mean of a population and a difference in means in two populations. We've also gone over some basic R/Python functionality within RStudio, basic functions, packages, etc. You can use all of that knowledge in this homework set. **UPDATE ME**
+
+**Pro-tip**: Working through these examples, do reflect on the question of 'what is the cleanest shortest way I can call a function in R/Python to compute what I need?' Chances are, we've covered that function/code in the lecture examples and worksheets! 
+
+**... And what's next?** After this, we will go deeper into concepts needed for statistical inference beyond the probability comptuations we are doing right now. **UPDATE ME**
+
+
+
+## How to work with this document
+
+There are several ways to format your answer, but whatever you do, please make sure it is *readable* by a human and clean. That is, don't leave stray comments and commented instructions in your submitted work. You may use a quote code `>` to start your answer after any r/python code chunks you are typing. An example is provided in the first question below. 
+
+----- 
+
+# Part ONE: Clarifying the concepts
+In these four problems, you will ..... 
+
+## 1. Sampling distribution of the sample mean
+### Instructions
+_Review the theory about ...._
+
+*Justify both your computation and the reasoning behind your text  answer. Include the plot in your answer and shade the area that represents the probability you computed.* 
+
+
+### Task
+problem statmement 
+
+(a) question a.
+
+> [optional] Type your explanation here of how and why you may be running any code below. 
 
 ```{r}
-print("Hello world!")
+# type the code you need to compute the answer here.
+# silly example I will use below: 
+my.output <- 2+3 
 ```
 
-### 2. Loading data
+> Type your explanation here and the answer. Make sure to use **in-line code chunks** for any values you reference from the above computation. Example: the output of my computation above is `r my.output`. 
 
-For this example we'll use a very simple dataset.  The `cars` data comes with the default installation of R.  To see the first few columns of the data, just type `head(cars)`.
+(b) question b. 
+
+> [optional] Type your explanation here of how and why you may be running any code below. 
 
 ```{r}
-plot(cars)
+# type the code you need to compute the answer here.
+# silly example I will use below: 
+my.output <- 2+3 
 ```
 
-.... Note: this is **not** a good plot. What is it? What's the headline? 
-Let's try again. 
-
-```{r}
-plot(cars, 
-     main="Here's the title of the plot",
-     xlab="I changed the x label :)")
-```
-
+> Type your explanation here and the answer. Make sure to use **in-line code chunks** for any values you reference from the above computation. Example: the output of my computation above is `r my.output`. 
