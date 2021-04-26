@@ -1,0 +1,307 @@
+---
+title: "Lab: Linear regression  in R" 
+author: "**Solution**"
+date: Prepared for  ITMD/ITMS/STAT 514, Spring 2021
+output: html_document
+urlcolor: magenta
+---
+
+This document will help you walk through some of the fundamental R commands you need for exploring linear regression models, fit, and plots. In order to do this lab, it is expected you have completed the [week 14 lecture](https://htmlpreview.github.io/?https://github.com/Sondzus/StatsAnalytics/blob/master/514-4.4-handout-RegressionWihtExamples.html). 
+
+##### Remember to change the `author: ` field on this Rmd file to your own name.
+
+We'll begin by loading some packages.
+```{r}
+library(tidyverse)
+Cars93 <- as_tibble(MASS::Cars93)
+```
+
+# Part One 
+
+## Linear regression with Cars93 data
+
+
+Below is figure showing how Price varies with EngineSize in the Cars93, with accompanying regression lines.  There are two plots, one for USA cars, and one for non-USA cars.
+
+```{r, fig.align='center', fig.height = 4}
+qplot(data = Cars93, x = EngineSize, y = Price, colour = Origin) + 
+  facet_wrap("Origin") + 
+  stat_smooth(method = "lm") + 
+  theme(legend.position="none")
+```
+
+**(a)** Use the `lm()` function to regress Price on EngineSize and Origin
+
+```{r}
+cars.lm <- lm(Price ~ EngineSize + Origin, data = Cars93)
+
+summary(cars.lm)
+```
+
+**(b)** Run `plot()` on your `lm` object.  Do you see any problems?
+
+```{r, fig.width = 6, fig.height = 7}
+par(mfrow = c(2,2))
+plot(cars.lm)
+```
+
+The residual plot shows a clear sign of non-constant variance.  (The plot looks like a funnel, with variance increasing with fitted value.)  One can also see this from the upward slope evidence from the the scale-location plot.
+
+**(c)** Try running a linear regression with `log(Price)` as your outcome.
+
+```{r}
+cars.lm.log <- lm(log(Price) ~ EngineSize + Origin, data = Cars93)
+
+summary(cars.lm.log)
+```
+
+**(d)** Run `plot()` on your new `lm` object.  Do you see any problems?
+
+```{r, fig.width = 6, fig.height = 7}
+par(mfrow = c(2,2))
+plot(cars.lm.log)
+```
+
+The variance now looks pretty constant across the range of fitted values, and there don't appear to be any clear trends in the plots.  All of the diagnostic plots seem pretty good.  It looks like the log transformation helped.
+
+# Part Two
+ 
+
+## Learning objectives
+
+> In this part, you will gain practice with the following concepts from today's class:
+
+>- Interpreting linear regression coefficients of numeric covariates
+- Interpreting linear regression coefficients of categorical variables
+- Applying the "2 standard error rule" to construct approximate 95% confidence intervals for regression coefficients
+- Using the `confint` command to construct confidence intervals for regression coefficients
+- Using `pairs` plots to diagnose collinearity
+- Using the `update` command to update a linear regression model object
+- Diagnosing violations of linear model assumptions using `plot`
+
+We'll begin by loading some packages.
+```{r}
+#library(tidyverse)
+library(knitr)
+
+#Cars93 <- as_tibble(MASS::Cars93)
+# If you want to experiment with the ggpairs command,
+# you'll want to run the following code:
+# install.packages("GGally")
+# library(GGally)
+```
+
+## Linear regression with Cars93 data
+
+**(a)** Use the `lm()` function to regress Price on: EngineSize, Origin, MPG.highway, MPG.city and Horsepower.
+
+```{r}
+cars.lm <- lm(Price ~ EngineSize + Origin + MPG.highway + MPG.city + Horsepower,
+   data = Cars93)
+```
+
+**(b)** Use the `kable()` command to produce a nicely formatted coefficients table.  Ensure that values are rounded to an appropriate number of decimal places.
+
+```{r, results = 'asis'}
+kable(summary(cars.lm)$coef, digits = c(3, 3, 3, 4), format = "markdown")
+```
+
+
+**(c)** Interpret the coefficient of `Originnon-USA`.  Is it statistically significant?
+
+> The coefficient of `Originnon-USA` is `r round(coef(cars.lm)["Originnon-USA"], 2)`. This indicates that, all else in the model held constant, vehicles manufactured outside of the USA carry a price tag that is on average $`r round(coef(cars.lm)["Originnon-USA"], 2)` thousand dollars higher than vehicles manufactered in the US.  The coefficient is statistically significant at the 0.05 level. 
+
+**(d)** Interpret the coefficient of `MPG.highway`.  Is it statistically significant?
+
+> The coefficient of `MPG.highway` is `r round(coef(cars.lm)["MPG.highway"], 3)`, which is close to 0 numerically and is not statistically significant.  Holding all else in the model constant, MPG.highway does not appear to have much association with Price.
+
+
+**(d)** Use the "2 standard error rule" to construct an approximate 95% confidence interval for the coefficient of `MPG.highway`.  Compare this to the 95% CI obtained by using the `confint` command.
+
+```{r}
+est <- coef(cars.lm)["MPG.highway"]
+se <- summary(cars.lm)$coef["MPG.highway", "Std. Error"]
+# 2se rule confidence interval:
+c(est - 2 *se, est + 2 * se)
+
+# confint approach
+confint(cars.lm, parm = "MPG.highway")
+```
+
+> We see that the confidence intervals obtained via the two different approaches are essentially identical.  
+
+**(e)**  Run the `pairs` command on the following set of variables: EngineSize, MPG.highway, MPG.city and Horsepower.  Display correlations in the   Do you observe any collinearities?  
+
+```{r}
+panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...)
+{
+    usr <- par("usr"); on.exit(par(usr))
+    par(usr = c(0, 1, 0, 1))
+    r <- abs(cor(x, y))
+    txt <- format(c(r, 0.123456789), digits = digits)[1]
+    txt <- paste0(prefix, txt)
+    if(missing(cex.cor)) cex.cor <- 0.4/strwidth(txt)
+    text(0.5, 0.5, txt, cex = pmax(1, cex.cor * r))
+}
+
+pairs(Cars93[,c("EngineSize", "MPG.highway", "MPG.city", "Horsepower")], 
+      lower.panel = panel.cor)
+```
+
+> The MPG.highway and MPG.city variables are very highly correlated.  
+
+**(f)** Use the `update` command to update your regression model to exclude `EngineSize` and `MPG.city`.  Display the resulting coefficients table nicely using the `kable()` command.
+
+```{r}
+cars.lm2 <- update(cars.lm, . ~ . - EngineSize - MPG.city)
+```
+
+```{r}
+kable(summary(cars.lm2)$coef, digits = c(3, 3, 3, 4), format = "markdown")
+```
+
+**(g)**  Does the coefficient of `MPG.highway` change much from the original model?  Calculate a 95% confidence interval and compare your answer to part (d).  Does the CI change much from before?  Explain.
+
+```{r}
+# old
+confint(cars.lm, parm = "MPG.highway")
+# new
+confint(cars.lm2, parm = "MPG.highway")
+```
+
+> Both the estimate and the confidence interval change greatly.  When we remove the highly collinear MPG.city variable from the model, the coefficient of MPG.highway increases (in magnitude).  We also get a much narrower confidence interval, indicating that we are able to more precisely estimate the coefficient of MPG.highway.  
+
+**(h)** Run the `plot` command on the linear model you constructed in part (f).  Do you notice any issues?
+
+```{r, fig.height = 12, fig.width = 12}
+par(mfrow = c(2, 2))
+plot(cars.lm2)
+```
+
+- Residual vs Fitted curve:  Shows some indication of non-linearity, but this could be a more of a non-constant variance issue.  
+- Normal QQ plot: Shows possible deviation in the upper tail.  Observation 59 is particularly worrisome.  Without this observation, there wouldn't be much of an issue.
+- Scale-Location plot: There's a discernible upward trend in the red trend line in this plot, which indicates possible non-constant (increasing) variance.  
+- Residual vs Leverage:  Observation 59 has very high residual, but not particularly high leverage.  
+
+
+# Part Three 
+
+##  Learning objectives
+
+> In this part, you will gain practice with the following concepts from today's class:
+
+>- Interpreting linear regression coefficients of numeric covariates
+- Interpreting linear regression coefficients of categorical variables
+- Fitting linear regression models with interaction terms
+- Interpreting linear regression coefficients of interaction terms
+
+```{r}
+#library(tidyverse)
+```
+
+```{r, echo = FALSE}
+# Load data from MASS into a tibble and do pre-processing
+birthwt <- as_tibble(MASS::birthwt) %>%
+  rename(birthwt.below.2500 = low, 
+         mother.age = age,
+         mother.weight = lwt,
+         mother.smokes = smoke,
+         previous.prem.labor = ptl,
+         hypertension = ht,
+         uterine.irr = ui,
+         physician.visits = ftv,
+         birthwt.grams = bwt) %>%
+  mutate(race = recode_factor(race, `1` = "white", `2` = "black", `3` = "other")) %>%
+  mutate_at(c("mother.smokes", "hypertension", "uterine.irr", "birthwt.below.2500"),
+            ~ recode_factor(.x, `0` = "no", `1` = "yes"))
+```
+
+## Interaction terms in regression
+
+
+**(a)** Run a linear regression to better understand how birthweight varies with the mother's age and smoking status (do not include interaction terms).
+
+```{r}
+# Run regression model
+birthwt.lm <- lm(birthwt.grams ~ mother.age + mother.smokes, data = birthwt)
+
+# Output coefficients table
+summary(birthwt.lm)
+```
+
+**(b)** What is the coefficient of mother.age in your regression?  How do you interpret this coefficient?
+
+```{r}
+coef(birthwt.lm)["mother.age"]
+
+age.coef <- round(coef(birthwt.lm)["mother.age"], 1)
+```
+
+**Note: This solution uses inline code chunks.** The coefficient is `r age.coef`.  This means that among mothers with the same smoking status, each additional year of age is on average associated with a `r age.coef`g increase in birthweight. *However, this coefficient is not statistically significant, so there may be no association between mother's age and birth weight.*
+
+**(c)** How many coefficients are estimated for the mother's smoking status variable?  How do you interpret these coefficients?
+
+```{r}
+coef(birthwt.lm)["mother.smokesyes"]
+
+smoke.coef <- abs(round(coef(birthwt.lm)["mother.smokesyes"], 1))
+```
+
+**Note: This solution uses inline code chunks.**  There is just one coefficient estimated.  This coefficient gives us the average difference in birthweight between mothers that smoke and mother's that don't, in a model that adjusts for the effect of mother's age.  That is, after we adjust for the effect of age, smoking leads to an average `r smoke.coef` decrease in birthweight.  
+
+**(d)** What does the intercept mean in this model?
+
+The intercept is the (extrapolated) estimated birth weight of a baby born to a *non-smoking* mother who is *0 years of age*.  Note that this value doesn't really make sense because mothers can't be 0 years of age when they give birth.  
+
+**(e)** Using ggplot, construct a scatterplot with birthweight on the y-axis and mother's age on the x-axis.  Color the points by mother's smoking status, and add smoking status-specific linear regression lines using the `stat_smooth` layer.
+
+```{r}
+library(ggplot2)
+
+# Note fullrange = TRUE is used here to extend the 'mother.smokes = yes' line beyond the maximum age (35) in this group
+qplot(data = birthwt, x = mother.age, y = birthwt.grams, colour = mother.smokes) + stat_smooth(method = "lm", fullrange = TRUE)
+```
+
+**(f)** Do the regression lines plotted in part (e) correspond to the model you fit in part (a)?  How can you tell?
+
+The regression lines shown here *do not correspond to the model in part (a)*.  The lines in the plot have different slopes depending on whether the mother smokes or not.  This is an interaction effect between mother's smoking status and mother's age.  By contrast, the model in part (a) allows only for different intercepts, and assumes a common slope for both smoking categories.
+
+**(g)** Fit a linear regression model that now models potential interactions between mother's age and smoking status in their effect on birthweight.
+
+```{r}
+# Note: this is the same as ~ mother.smokes + mother.age + mother.smokes*mother.age
+birthwt.lm.interact <- lm(birthwt.grams ~ mother.smokes*mother.age, data = birthwt)
+
+summary(birthwt.lm.interact)
+```
+
+**(h)** Interpret your model.  Is the interaction term statistically significant?  What does it mean?
+
+```{r}
+# p-value for interaction coefficient
+pval.interact <- coef(summary(birthwt.lm.interact))["mother.smokesyes:mother.age", "Pr(>|t|)"]
+
+slope.nosmoke <- coef(birthwt.lm.interact)["mother.age"]
+
+slope.smoke <- coef(birthwt.lm.interact)["mother.age"] + coef(birthwt.lm.interact)["mother.smokesyes:mother.age"]
+```
+
+The estimated interaction term between mother's age and smoking status (estimated for mother.smokes = yes) is negative, and statistically significant at the 0.05 level (p-value = `r pval.interact`).  This means that the slope (with age) among mothers that smoke is much smaller than the slope among mother's that don't.  Indeed, among mothers that don't smoke, for every additional year of age the average birthweight increases by `r slope.nosmoke`g on average.  Among mothers that do smoke, for every additional year of age the average birthweight **decreases** by `r abs(slope.smoke)`g on average
+
+
+----  
+## License & Acknowledgements
+
+This document  is created for Math 514, Spring 2021, at Illinois Tech. 
+While the course materials are generally not  to be distributed outside the course without permission of the instructor,  this particular set of notes is licensed under a [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+
+
+This lab is adapted -- with minor edits -- from Prof. Alexandra Chouldechova at Carnegie Mellon University, which were  released under a Attribution-NonCommercial-ShareAlike 3.0 United States license.
+
+[![Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License][image]][hyperlink]
+
+  [hyperlink]: https://creativecommons.org/licenses/by-nc-sa/4.0/
+  [image]: https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png
+    
+
+
