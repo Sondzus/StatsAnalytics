@@ -1,0 +1,197 @@
+---
+title: "Overview of some important Python packages: `Pandas`"
+author: 
+  - Sonja Petrovic^[Sonja Petrović,  Associate Professor of Applied  Mathematics, College of Computing, Illinios Tech.  [Homepage](https://www.SonjaPetrovicStats.com), [Email](mailto:sonja.petrovic@iit.edu).] This set of notes is created by Amirreza Eshraghi, our teaching assistant. 
+date: "ITMD/ITMS/STAT 514, Sp21"
+subtitle: 'Topic: Basics of coding, R&Python'
+output: rmdformats::readthedown
+urlcolor: darkblue
+---
+
+
+--- 
+
+# Overview 
+
+> What is the purpose of these notes? 
+
+*  Provide a few small examples of things you can do with the `Pandas` package in `Python`. 
+
+Note, the code chunks in this document are all `python` chunks, except the first one. 
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+**This is a basic guide on working with pandas in Python** 
+
+In this file we are going to use Pandas to   
+
+-make/import dataframes (using dictionaries and indexes)  
+-Index the data frames   
+-Access specific rows, columns or entries in the dataframe  
+-Dropp rows,columns, null values  
+
+
+# `Reticulate` for `Pandas` in `.Rmd`
+
+For using Python in rmd files we need to call the Reticulate library: 
+```{r}
+# note this is the only R code chunk in this document. The rest are Python. 
+library(reticulate)
+```
+
+
+```{python}
+import pandas as pd
+```
+
+For creating a dataframe using values and columns name we can use the following: 
+
+1.  Create a dictionary based on the column names and values, something like this for example:
+
+```{python}
+dict = {"country": ["Brazil", "Russia", "India", "China", "South Africa"],
+       "capital": ["Brasilia", "Moscow", "New Dehli", "Beijing", "Pretoria"],
+       "area": [8.516, 17.10, 3.286, 9.597, 1.221],
+       "population": [200.4, 143.5, 1252, 1357, 52.98] }
+```
+
+2. Create the dataframe using pandas and the dictionary:
+
+```{python}
+df = pd.DataFrame(dict)
+print(df)
+
+```
+
+
+# Importing data
+
+You can import dataframes as well too by using read_csv() method from pandas.
+
+For this example lets import the `bank_training` dataset you've used on an early homework set. 
+
+```{python}
+import pandas as pd
+
+path="https://campuspro-uploads.s3-us-west-2.amazonaws.com/a9d789c2-6b5e-4020-a941-69984947f1ee/d2c0b7ab-df96-4891-b40f-392d348c30dc/bank_marketing_training"
+
+bank_training=pd.read_csv(path)
+bank_training.head()
+```
+
+# Basic cleanup and data access 
+
+Now for adjusting the index, lets do it on the first dataframe (df) that we defined.
+
+```{python}
+#setting index for df
+df.index = ["BR", "RU", "IN", "CH", "SA"]
+
+# Print out df with new index values
+print(df)
+```
+
+## Accessing rows, columns, and entries...
+
+```{python}
+# Print out first nine rows of job column. the bank_training['job'] will make a Pandas Series
+print(bank_training['job'][0:9])
+
+# Print out the head of the job column as Pandas DataFrame
+print(bank_training[['job']].head())
+
+# Print out head of the DataFrame with job and marital columns
+print(bank_training[['job', 'marital']].head())
+```
+
+Square brackets can also be used to access observations (rows) from a DataFrame. For example:
+
+```{python}
+
+# Print out first 4 observations
+print(bank_training[0:4])
+
+# Print out fifth and sixth observation
+print(bank_training[4:6])
+```
+
+
+# Simple data selections 
+
+You can also use loc and iloc to perform just about any data selection operation. loc is label-based, which means that you have to specify rows and columns based on their row and column labels. iloc is integer index based, so you have to specify rows and columns by their integer index like you did in the previous exercise.
+
+
+```{python}
+
+# Print out observation for the second row
+print(bank_training.iloc[2])
+
+# Print out first 10 observations for job 
+print(bank_training.loc[0:9,'job'])
+
+#Print out first nine records of marital and job in the bank_training dataset
+print(bank_training.iloc[0:8,[2,3]])
+```
+
+## Dropping rows, columns
+
+**Dropping rows with index**: 
+Note: the inplace parameter will determine to apply the transformation to the original dataset or no, if it's false it won't save the output without assigning it to a value but if it's true the dataframe will be transfomed: 
+`axis=0 --> rows ,, axis=1 --> columns`. 
+
+
+```{python}
+ind=[4,5]
+bank_training.drop(ind, axis=0,inplace=True)
+bank_training.head()
+#dropping marital column and save the new dataframe as "dfnew"
+dfnew=bank_training.drop("marital", axis=1, inplace=False)
+dfnew.head()
+```
+
+## Dropping `Null` values using pandas  
+
+The "dropna" method in pandas will let you to remove rows or columns having at least one null values, for more detail visit: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.dropna.html
+
+Similar to the last chunk, this will let us to choose the axis and inplace too.
+The following code will remove all the rows which have at least one null values in their entries: 
+
+```{python}
+bank_training.dropna(axis=0, inplace=True)
+bank_training.head()
+```
+
+# Other information and references 
+
+What else can be done in `Python` using `Pandas`? Lots of things!!  
+
+Basically, any preprocessing method can be applied using `Pandas` and `Numpy`: 
+
+- Manipulating and applying functions in each row and columns (lambda function)  
+- Summary statistics and description of the dataset  
+- Merging datasets, transformations and normalization  
+- Outlier detection, removing  
+- Removing duplicates  
+- Feature engineering  
+- ... 
+
+> To learn more about `Pandas`, visit: https://www.w3schools.com/python/pandas/default.asp
+
+
+
+# License
+
+This document  is created for Math 514, Spring 2021, at Illinois Tech. 
+While the course materials are generally not  to be distributed outside the course without permission of the instructor,  this particular set of notes is licensed under a [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+
+
+[![Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License][image]][hyperlink]
+
+  [hyperlink]: https://creativecommons.org/licenses/by-nc-sa/4.0/
+  [image]: https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png
+    
+

@@ -1,0 +1,317 @@
+---
+title: "Examples of interval estimation: one- and two-population location problems"
+subtitle: "Topic 2.2: Basics of statistical inference - confidence intervals"
+author: 
+  - Sonja Petrovic^[Sonja Petrović,  Associate Professor of Applied  Mathematics, College of Computing, Illinios Tech.  [Homepage](https://www.SonjaPetrovicStats.com), [Email](mailto:sonja.petrovic@iit.edu).] 
+date: "Week 8, ITMD/ITMS/STAT 514, Sp21"
+output: rmdformats::readthedown
+urlcolor: darkblue
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,comment = '', fig.align = 'center' , out.width="50%"
+)
+library("tidyverse")
+knitr::include_graphics
+library(AmesHousing) 
+library("dplyr")
+library("ggplot2")
+library("reticulate")
+use_virtualenv("r-reticulate")
+```
+
+
+--- 
+
+# Background 
+
+> What is the purpose of these notes? 
+
+1. Provide the code for the lecture slides on this topic 
+
+
+
+### Installing and loading packages
+
+```
+knitr::opts_chunk$set(
+  echo = TRUE,comment = '', fig.align = 'center' , out.width="50%"
+)
+library("tidyverse")
+knitr::include_graphics
+library(AmesHousing) 
+library("dplyr")
+library("ggplot2")
+library("reticulate")
+use_virtualenv("r-reticulate")
+```
+
+
+
+
+![100 confidence intervals for Ames housing](img/AmesArea100CIs.png){ width=80% }
+
+
+#  Some well-known confidence intervals
+
+## Theoretical constructs 
+During the lecture, we will go over confidence intervals for means, differences in means, by hand.
+Includes small examples.
+
+# Estimating population mean --  Application: Ames housing: R
+
+```{r, include=TRUE}
+ames <- make_ames()
+```
+
+```{r}
+sampl <- ames %>%
+  sample_n(size = 50) 
+library(ggplot2)
+ggplot(data = sampl, aes(x = Gr_Liv_Area)) + 
+  geom_histogram(binwidth = 100)
+```
+
+# What is the mean area of a home sold in Ames, IA? 
+
+> Question: 
+What statistics are we supposed to use?
+  What is its sampling distribution?
+
+
+```{r}
+housing.area.t <- t.test(sampl$Gr_Liv_Area)
+#ignore all output for now except the confidence interval 
+#(because it is NOT meaninguful!)
+housing.area.t 
+```
+---
+
+Compare: 
+```{r}
+t.test(sampl$Gr_Liv_Area,conf.level = .98)
+```
+
+
+# Estimating difference in means between two populations 
+
+##  Application: Birhtweight: R
+
+```{r include=FALSE}
+library(tidyverse)
+birthwt <- as_tibble(MASS::birthwt)
+
+# Rename variables
+birthwt <- birthwt %>%
+  rename(birthwt.below.2500 = low, 
+         mother.age = age,
+         mother.weight = lwt,
+         mother.smokes = smoke,
+         previous.prem.labor = ptl,
+         hypertension = ht,
+         uterine.irr = ui,
+         physician.visits = ftv,
+         birthwt.grams = bwt)
+
+# Change factor level names
+birthwt <- birthwt %>%
+  mutate(race = recode_factor(race, `1` = "white", `2` = "black", `3` = "other")) %>%
+  mutate_at(c("mother.smokes", "hypertension", "uterine.irr", "birthwt.below.2500"),
+            ~ recode_factor(.x, `0` = "no", `1` = "yes"))
+```
+
+* Recall the data set: 
+```{r, size = 'tiny'}
+birthwt <- as_tibble(birthwt)
+birthwt
+```
+
+
+##  Difference in means
+Create boxplot showing how birthwt.grams varies between
+ smoking status: 
+ 
+```{r, echo=TRUE}
+qplot(x = mother.smokes, y = birthwt.grams,
+      geom = "boxplot", data = birthwt,
+      xlab = "Mother smokes", 
+      ylab = "Birthweight (grams)",
+      fill = I("lightblue"))
+```
+
+This plot suggests that smoking is associated with lower birth weight.
+
+---
+
+**How can we assess whether this difference is statistically significant?**
+
+Let’s compute a summary table
+
+```{r}
+birthwt %>%
+  group_by(mother.smokes) %>%
+  summarize(mean.birthwt = round(mean(birthwt.grams), 0),
+            sd.birthwt = round(sd(birthwt.grams), 0))
+```
+
+---
+
+> Question:
+What statistics are we supposed to use?
+  What is its sampling distribution?
+
+
+ 
+Therefore, we should use commands that involve `t`,  
+such as `t.test`:
+ 
+```{r}
+birthwt.t.test <- t.test(birthwt.grams ~ mother.smokes, 
+                         data = birthwt)
+birthwt.t.test
+```
+
+We see from this output that the difference is highly significant. The t.test() function also outputs a confidence interval for us.
+
+--- 
+
+Notice that the function returns a lot of information, and we can access this information element by element: 
+```{r}
+names(birthwt.t.test)
+birthwt.t.test$estimate  # group means
+birthwt.t.test$conf.int  # confidence interval for difference
+```
+
+
+
+# >> Markdown tricks! << 
+
+The ability to pull specific information from the output of the hypothesis test allows you to report your results using inline code chunks. That is, you don’t have to hardcode estimates, p-values, confidence intervals, etc.
+
+```{r} 
+# Calculate difference in means between smoking and nonsmoking groups
+birthwt.t.test$estimate
+birthwt.smoke.diff <- 
+  round(birthwt.t.test$estimate[1] 
+        - birthwt.t.test$estimate[2], 1)
+# Confidence level as a %
+conf.level <- 
+  attr(birthwt.t.test$conf.int, "conf.level") * 100
+conf.level
+```
+
+--- 
+
+Example: Here’s what happens when we knit the following paragraph.
+
+
+```{r, eval=FALSE}
+Our study finds that birth weights are on average 
+`r birthwt.smoke.diff`g higher in the non-smoking group 
+compared to the smoking group 
+(t-statistic `r round(birthwt.t.test$statistic,2)`, 
+  p=`r round(birthwt.t.test$p.value, 3)`,
+  `r conf.level`% CI [`r round(birthwt.t.test$conf.int,1)`]g)
+```
+**Output:**
+
+Our study finds that birth weights are on average `r birthwt.smoke.diff`g higher in the non-smoking group compared to the smoking group (t-statistic `r round(birthwt.t.test$statistic,2)`, p=`r round(birthwt.t.test$p.value, 3)`, `r conf.level`% CI [`r round(birthwt.t.test$conf.int,1)`]g)
+
+# Extras
+There are nicer ways (that are not the basic thing we're using so far) to plot and visulaize t-test and its outputs. For a nice reference, see [this page](https://www.datanovia.com/en/lessons/how-to-do-a-t-test-in-r-calculation-and-reporting/). 
+
+# Application: Python
+
+Scipy.Stats t!
+The `t` class have similar behavior like `t.test` in R, for constructing a mean sample t-test you can modify the parameters: 
+`df`(degree of freedom), `mean`(sample mean), `sd`(sample standard error) and `Confidence_level`, and then use the following command:
+
+
+`confidence_interval = scipy.stats.t.interval(Confidence_level, df, mean, sd)`. 
+
+For 2 sample t-test, you can use the following function (remember that you can change the confidence level as your desired value in the function):
+
+---
+
+
+```{r inlcude=TRUE}
+# this is an R code chunk. 
+# py_install("pandas")
+# py_install("numpy")
+```
+
+```{python}
+# this is a Python code chunk. 
+import numpy as np
+from scipy.stats import ttest_ind
+from scipy.stats import t
+import pandas as pd
+
+def welch_ttest(x1, x2):
+    
+    n1 = x1.size
+    n2 = x2.size
+    m1 = np.mean(x1)
+    m2 = np.mean(x2)
+    
+    v1 = np.var(x1, ddof=1)
+    v2 = np.var(x2, ddof=1)
+    pooled_se = np.sqrt(v1 / n1 + v2 / n2)  #computing the sd
+    delta = m1-m2
+    
+    tstat = delta /  pooled_se
+    df = (v1 / n1 + v2 / n2)**2 / (v1**2 / (n1**2 * (n1 - 1)) + v2**2 / (n2**2 * (n2 - 1)))  
+              #computing the df
+    
+    # two side t-test
+    p = 2 * t.cdf(-abs(tstat), df)   #p-value
+    
+    # upper and lower bounds
+    lb = delta - t.ppf(0.975,17.9)*pooled_se 
+    ub = delta + t.ppf(0.975,17.9)*pooled_se
+  
+    return pd.DataFrame(np.array([tstat,df,p,delta,lb,ub]).reshape(1,-1),
+                         columns=['T statistic','df','pvalue 2 sided','Difference in mean','lb','ub'])   
+                         #the interval is (lb,ub)
+
+```
+
+
+
+# All kinds of t-tests...^[Neat summary from https://www.statmethods.net/stats/ttest.html]
+
+### There are several scenarios that can happen when there are two populations! 
+
+The `t.test( )` function in `R` produces a variety of t-tests. Unlike most statistical packages, the default assumes unequal variances... here is the scoop:
+
+```{r eval=FALSE}
+# independent 2-group t-test
+t.test(y~x) # where y is numeric and x is a binary factor
+# independent 2-group t-test
+t.test(y1,y2) # where y1 and y2 are numeric
+# paired t-test
+t.test(y1,y2,paired=TRUE) # where y1 & y2 are numeric
+# one sample t-test
+t.test(y,mu=3) # Ho: mu=3
+```
+
+You can use the var.equal = TRUE option to specify equal variances and a pooled variance estimate. You can use the alternative="less" or alternative="greater" option to specify a one tailed test.
+
+# Wait. What are these 'tests' to which we are referring?! 
+
+Next, let's introduce a formal statistical procedure called a **hypothesis test**! 
+
+
+
+
+#  License  
+
+This document  is created for ITMD/ITMS/STAT 514, Spring 2021, at Illinois Tech. 
+
+While the course materials are generally not to be distributed outside the course without permission of the instructor, all materials posted on this page are licensed under a [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+
+# Acknowledgement 
+Parts of this lecture were sourced from Prof. Alexandra Chouldechova, 
+released under a Attribution-NonCommercial-ShareAlike 3.0 United States license.

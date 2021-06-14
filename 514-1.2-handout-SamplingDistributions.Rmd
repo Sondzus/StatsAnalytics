@@ -1,0 +1,236 @@
+---
+title: "Sampling distributions - some illustrative examples"
+author: 
+  - Sonja Petrovic^[Sonja Petrović,  Associate Professor of Applied  Mathematics, College of Computing, Illinios Tech.  [Homepage](https://www.SonjaPetrovicStats.com), [Email](mailto:sonja.petrovic@iit.edu).] 
+date: "Week 3, ITMD/ITMS/STAT 514, Sp21"
+output: rmdformats::readthedown
+urlcolor: darkblue
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,comment = '', fig.width = 3, fig.height = 3
+  )
+```
+
+
+--- 
+
+# Background 
+
+> What is the purpose of these notes? 
+
+1. Provide a few small examples of sampling distributions;
+2. Introduce you further to `R Markdown`;
+3. Give you several lines of `R` code you can use in this course. 
+ 
+
+### Installing and loading packages
+
+Just like every other programming language you may be familiar with, R's capabilities can be greatly extended by installing additional "packages" and "libraries".
+
+To **install** a package, use the `install.packages()` command.  You'll want to run the following commands to get the necessary packages for today's lab:
+
+```
+install.packages("rmdformats")
+install.packages("ggplot2")
+install.packages("knitr")
+```
+
+As always, you only need to install packages once.  Once they're installed, you may use them by **loading** the libraries using the `library()` command.  For today's lab, you'll want to run the following code
+
+```{r}
+library(ggplot2) # graphics library
+library(knitr)   # contains kable() function
+
+options(scipen = 4)  # Suppresses scientific notation
+```
+
+--- 
+# Context 
+
+As we learned in this week's lectures, **statistics computed from data are also random variables**. 
+As such, \textcolor{brown}{they each have their own distribution}. (!) In this set of examples, we will go through a few scenarios to explore this concept. 
+
+## Sampling distributions from a coin simulation
+
+This is a very simple example of simulating a coin toss, borrowed from my colleague at UIC:  <http://homepages.math.uic.edu/~jyang06/stat411/handouts/handout3.pdf>. 
+Let $x$  be the random variable recording the outcome of a coin toss: $x_i=0$ if we see Tail on the $i$-th trial (toss), and $x_i=1$ if we see heads on the $i$-th trial.
+```{r 100Kcointosses, echo=TRUE}
+n <- 100000 # number of random experiments
+x <- c(0,1) # sample space for tossing a coin, 0--Tail, 1--Head
+coin.simulation <- sample(x, size=n, replace=TRUE)
+```
+If you'd like to see what options we are using for sampling, and why, try this:
+```{r gettinghelp, echo=TRUE}
+help(sample)
+```
+Let us count the number of heads in this experiment. 
+The number of heads observed when tossing a coin $n$ times is a statistics computed from the sample of $n$ coin tosses.  $Y$ is itself a random variable. It has a distribution, just like $X$, the coin toss. 
+```{r countheads}
+y = sum(coin.simulation)
+y
+```
+What is this number? 
+
+It is a **statistic**, being the following function of the sample: 
+$$\sum_{i=1}^n x_i,$$ where $n$ is the total sample size (in this case it was $n=$ `r n`), and $x_i$ is the $i$-th observation of the random variable $x$. 
+The observed value of $Y$ is $y=$ `r y`. 
+Given the observed sample, we simply added up the values to report the number of heads. 
+
+Let us now look at the frequency distribution for the sample: 
+```{r}
+barplot(table(coin.simulation))
+```
+
+
+###  What  can we say about the number of heads? 
+Let us fix the sample size to be $n=10000$ and explore the number of heads seen when the coin is tossed $n$ times. 
+
+- Some questions that should be on your mind are: *is the number of heads supposed to be $n/2$? How far off is it? does it vary? what does this mean?* 
+
+Let's explore how this value varies in repeated experiments. 
+``` {r distrib-of-heads, fig.width = 6, fig.height = 3}
+n=10000
+sums.in.repeated.sampling.10reps<-replicate(10, sum(sample(x, size=n, replace=TRUE)))
+sums.in.repeated.sampling.100reps<-replicate(100, sum(sample(x, size=n, replace=TRUE)))
+sums.in.repeated.sampling.1Kreps<-replicate(10000, sum(sample(x, size=n, replace=TRUE)))
+par(mfrow=c(1,3))
+hist(sums.in.repeated.sampling.10reps,main = paste("Number of heads- 10 reps"))
+hist(sums.in.repeated.sampling.100reps,main = paste("Number of heads- 100 reps"))
+hist(sums.in.repeated.sampling.1Kreps,main = paste("Number of heads- 1K reps"))
+```
+
+### Conclusion
+The number of heads observed--let us call it $Y$--when tossing a coin $n$ times is a statistics computed from the sample of $n$ coin tosses.  $Y$ is itself a random variable. It has a distribution, just like $X$, the coin toss. 
+
+The experiments above suggest that the sampling distribution of $Y$ appears to have a mean around *the expected number of heads when a fair coin is tossed*, which is about $n/2$. The more times we repeat the experiment of $n$ coin tosses, the closer $Y$ gets to its expected value -- this can be measured by looking at both the mean and the variance of Y. 
+```{r distrib-of-heads-continued, results='asis'} 
+means.of.Y<-c(mean(sums.in.repeated.sampling.10reps),
+              mean(sums.in.repeated.sampling.100reps),
+              mean(sums.in.repeated.sampling.1Kreps))
+vars.of.Y<-c(var(sums.in.repeated.sampling.100reps),
+             var(sums.in.repeated.sampling.100reps), 
+             var(sums.in.repeated.sampling.1Kreps))
+library(knitr)
+kable(means.of.Y, align = "l",col.names="Means of Y")
+kable(vars.of.Y, align = "l",col.names="Vars of Y")
+```
+
+*Question*: is it possible that something similar to this always happens? 
+
+> As we will see, the sampling distribution of $Y$ is approximately *normal* with mean equal to the expected value of $X$. In other words, the example above illustrates a known result--**the Central Limit Theorem**, one of the cornerstone results used in inference!
+
+### Resources: 
+View a short video tutorial  about the Central Limit Theorem [here](https://www.jbstatistics.com/introduction-to-the-central-limit-theorem/), and view another set of examples [introducing sampling distributions](https://www.jbstatistics.com/sampling-distributions-introduction-to-the-concept/). 
+
+
+# Sampling distribution from casting a die
+
+Consider casting a (regular, 6-sided) die, and maybe you are interested in the number of times a "3" is observed. Let's set up the experiment:
+```{r roll-a-die-count-3s}
+x <- c(1,2,3,4,5,6) # sample space for casting a die
+n # in case we forgot what n was :) 
+die.simulation <- sample(x, size=n, replace=TRUE)
+sum(die.simulation==3) # count number of "3"
+```
+
+What do you see? We just rolled a die $n$ times and this is how many times we saw the number 3. Why don't we re-run that experiment for various $n$? 
+```{r roll-a-die-repeated-experiments-increasing-n, fig.width = 6, fig.height = 3}
+par(mfrow=c(2,3))
+for(n in c(1,10,100,1000,10000,100000)){
+  die.simulation <- sample(x, size=n, replace=TRUE)
+  barplot(table(die.simulation), 
+          main = paste("Rolling a die", n, "times") , 
+          xlim=c(0,7), col="mistyrose3"
+          #,ylab="Relative frequency"
+          )
+}
+```
+
+
+
+# Importance of sampling distributions: an illustration 
+
+> Pro tip: this is a more advanced example. 
+
+Sampling distributions tell a story about the model behind the data (i.e., the probability distribution or population from which the data was sampled) and give a glimpse into how it was generated.
+```{r mixture.of.normals}
+N <- 1000
+components <- sample(1:3,prob=c(0.3,0.5,0.2),size=N,replace=TRUE)
+mus <- c(0,40,10)
+sds <- sqrt(c(1,1,0.1))
+samples <- rnorm(n=N,mean=mus[components],sd=sds[components])
+hist(samples)
+summary(samples)
+```
+
+Hmm.. is it strange to see "two bumps" in the histogram instead of one, as usual? Maybe the sample size is too small, we need to simulate more data (from the same model). Let's do that:
+
+```{r mixture.of.normals.larger.sample,fig.width = 6}
+N <- 10000
+components <- sample(1:3,prob=c(0.3,0.5,0.2),size=N,replace=TRUE)
+samples <- rnorm(n=N,mean=mus[components],sd=sds[components])
+par(mfrow=c(1,2))
+hist(samples)
+plot(density(samples))
+```
+
+
+The picture only became clearer: this data is _not_ being drawn from anything like a normal distribution. 
+Consequently, knowing simply the mean and the variance ... is not enough to understand the data, that is, the data-generating mechanism behind it. 
+
+> This was an example of a **mixture** of normal distributions. 
+
+Let's explore mixture distributions: what do they capture? 
+
+# An example of a mixture of discrete distributions 
+
+> Pro tip: this is a more advanced example. 
+
+Here is an example from <http://web.stanford.edu/class/bios221/book/Chap-Mixtures.html>. 
+
+Suppose we have two *unfair* coins, whose probabilities of heads are $p_1 = 0.125$ and \(p_2=0.25\). 
+ With probability \(\pi\) we pick coin 1, with probability \(1-\pi\), coin 2. 
+ We then toss that coin twice and record the number of heads \(K\).
+
+1. Simulate 100 instances of this procedure, with \(\pi=\frac{1}{8}\), and compute the contingency table of \(K\).
+
+2. Do the same with \(\pi=\frac{1}{4}\).
+
+3. If you were not told \(p_1\), \(p_2\) and \(\pi\), could you infer them from the contingency table?
+
+```{r coinmixture}
+probHead = c(0.125, 0.25)
+for (pi in c(1/8, 1/4)) {
+  whCoin = sample(2, 100, replace = TRUE, prob = c(pi, 1-pi))
+  K = rbinom(length(whCoin), size = 2, prob = probHead[whCoin])
+  print(table(K))
+}
+hist(K)   #print(K)
+```
+
+> Ponder the last question: 
+*If you were not told \(p_1\), \(p_2\) and \(\pi\), could you infer them from the contingency table?* This is at the heart of statistical reasnoning. In this course, Math 563, we will learn how to answer this question and how to determine when a valid answer cannot  be obtained with certainty. 
+
+# Appendix
+Some resources and further reading: 
+
+* [sampling distribution overview](https://online.stat.psu.edu/stat500/lesson/4) offers a  low-level overview of what the topic is. I do not recommend it for PhD students, however, it may give additional examples to some of you who would like to brush up on some basic stats. 
+* View a short video tutorial  about the Central Limit Theorem [here](https://www.jbstatistics.com/introduction-to-the-central-limit-theorem/), and view another set of examples [introducing sampling distributions](https://www.jbstatistics.com/sampling-distributions-introduction-to-the-concept/). 
+
+
+
+# License
+
+This document  is created for Math 514, Spring 2021, at Illinois Tech. 
+While the course materials are generally not  to be distributed outside the course without permission of the instructor,  this particular set of notes is licensed under a [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+
+
+[![Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License][image]][hyperlink]
+
+  [hyperlink]: https://creativecommons.org/licenses/by-nc-sa/4.0/
+  [image]: https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png
+    
+
+

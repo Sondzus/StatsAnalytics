@@ -1,0 +1,243 @@
+---
+title: "Topic 2.3: basics of statistical inference"
+subtitle: |
+  | The F Distribution 
+  | The sampling distribution of sample variance
+author: |
+  | Sonja Petrović
+  | Created for ITMD/ITMS/STAT 514
+date: "Spring 2021." 
+urlcolor: darkblue
+output: 
+  beamer_presentation:
+    theme: "CambridgeUS"
+    colortheme: "beaver"
+    includes:
+      in_header: header_beamer.tex
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,comment = '', fig.align = 'center'  , out.width="50%"
+)
+knitr::include_graphics
+library(tigerstats)
+
+```
+
+
+
+# Sample variance 
+
+# Motivating question 
+
+A manufacturer of car batteries *guarantees that the batteries will last, on average,
+3 years with a standard deviation of 1 year*. If five of these batteries have lifetimes
+of $1.9, 2.4, 3.0, 3.5,$ and $4.2$ years, \attn{should the manufacturer still be convinced that
+the batteries have a standard deviation of 1 year?} 
+
+\pause 
+> Assume that the battery lifetime follows a normal distribution.
+
+... and?? 
+\quad  $S^2 \sim$ ....?? 
+
+\pause 
+\redblock{{Aha!} we need to think this through: 
+}
+
+* Is the mean of $S^2$ around $\sigma^2$, at least? 
+* Is $S^2\sim N(?,?)$? 
+* How do we figure out the actual sampling distribution of the random variable $S^2$? 
+
+
+# Discovering the sampling distribution of $S^2$
+
+Let's make a conjecture using some simulated data. 
+
+```{r SimDistrOfSampleVar-getNormalData}
+sample.var <- replicate(10, 10* var(rnorm(n=100,mean=mean(c(1.9, 2.4, 3.0, 3.5,4.2)),sd=1)))
+hist(sample.var, main=paste("Sample size 10"),
+     xlab="Sample variance of N(0,1)")
+```
+
+# Discovering the sampling distribution of $S^2$
+
+... was that enough data?! 
+\pause 
+```{r SimDistrOfSampleVar-getNormalData-largersample, include=FALSE}
+sample.var.1K <- replicate(1000, 1000*var(rnorm(n=100,mean=3,sd=1)))
+sample.var.10K <- replicate(10000, 10000*var(rnorm(n=100,mean=3,sd=1)))
+``` 
+```{r , echo=FALSE} 
+par(mfrow = c(1, 2))
+hist(sample.var.1K, main=paste("Sample size 1K"),
+     xlab="Sample variance of N(0,1)")
+hist(sample.var.10K, main=paste("Sample size 10K"),
+     xlab="Sample variance of N(0,1)")
+```
+
+
+# Sampling distribution of $S^2$
+
+
+\redblock{{Theorem}
+If $S^2$ is the variance of a random sample of size $n$ taken from a normal population
+having the variance $|sigma^2$, then the statistic
+\[
+    \chi^2 = \frac{(n-1)S^2}{\sigma^2} = \sum_{i=1}^n\frac{(X_i-\Xbar)^2}{\sigma^2}
+\]
+has a chi-squared distribution with $\nu = n -1$ degrees of freedom.
+}
+\pause 
+
+* The values of the random variable $\chi^2$  are calculated from each sample by the formula \[\chi^2=\frac{(n-1)s^2}{\sigma^2}.\]
+
+\pause 
+> \attn{Discuss probabilities.} 
+
+* What does a $\chi^2$ distribution look like?  
+
+
+# Back to the example
+
+> If five of these batteries have lifetimes of 1.9, 2.4, 3.0, 3.5, and 4.2 years, should the manufacturer still be convinced that the batteries have a standard deviation of 1 year?
+
+```{r}
+s2 = var(c(1.9, 2.4, 3.0, 3.5,  4.2))
+4*s2/1
+```
+... and? 
+\pause
+\attn{What is the probability of seeing a  value of `3.26` under the chi-square distribution with 4  degrees of freedom?}
+\pause 
+
+```{r}
+1- pchisq(3.26,df=4)
+```
+
+# Back to the example 
+
+```{r}
+pchisqGC(3.26,region="above",df=4,
+         xlab="chi_square_statistic",graph=TRUE)
+```
+
+\redblock{{Aha!} discuss meaning: what do these values encode? Is  `3.26` expected?}
+
+# The F-distribution
+
+#  Comparison of variability in two populations
+
+\redblock{{Theorem}
+IF $S^2_1$ and  $S^2_2$ are  the variances of independent random samples of size $n_1$ and  $n_2$ 
+taken from normal populations with variances $\sigma_1^2$ and $\sigma_2^2$, respectively, then
+\[ 
+  F = \frac{S_1^2/\sigma_1^2}{S_2^2/\sigma_2^2}
+\]
+has an $F$-distribution with $\nu_1=n_1-1$ and $\nu_2=n_2-1$ degrees of freedom.
+}
+
+* Discuss: use of the F-distribution, \attn{follow-up to Case Study 8.2} (paint drying time). 
+* Heads-up: this distribution is used in **analysis of variance**, a topic we'll  cover soon.  
+
+
+# What's next?
+
+Remember that probability calculations for the sample variance rely heavily on the assumption of normality. If the data distribution is not normal, then these probabilities may
+be way off.
+
+* We will learn about some \attn{heuristic tests for normality} of the data distribution. 
+
+--- 
+
+# Interlude 
+>  [Time permitting ... Let's talk about importing and selecting from another large dataset with which we may work.]
+
+# Appendix
+
+
+# A worksheet on sampling variance
+
+Let us  look at more simulations for variances.^[Examples extracted from sections 5.7.2 and 5.7.2. in [this book appendix](http://pages.stat.wisc.edu/~yandell/st571/R/append5.pdf).] 
+
+We will simulate values of  $V^2:= \frac{(n-1)S^2}{\sigma^2}$ from normal data. Assume that the underlying
+distribution $X$ is distributed as $X \sim N(0, 9)$ and suppose that the sample size, $n$, is $6$.
+
+\pause
+**Step 1.**
+Generate an object named `draws` with 6 rows and 1000
+columns of normal observations where the normal observation has mean 0 and standard
+deviation 3.
+```{r, out.height="40%"}
+draws = matrix(rnorm(1000 * 6, 0, 3), 6)
+```
+The  next line applies the var command to each column using the apply command to create the
+1000 values of $S^2$.
+```{r}
+drawvar = apply(draws, 2, var)
+```
+
+*** 
+
+**Step 2.**
+Present the histogram for these 1000 values of $V^2:= \frac{(n-1)S^2}{\sigma^2}$. 
+\small
+```{r} 
+draws = 5 * drawvar/9
+hist(draws, breaks = 20, prob = TRUE, 
+     main = "standard distribution for sample variance")
+v = seq(0, max(draws), length = 200)
+lines(v, dchisq(v, 5), lty = 2, lwd = 2)
+```
+Not surprisingly, the shape of this simulated distribution is very close to the shape of the
+theoretical distribution for $\chi^2$ with 5df (overlaid as a dashed lines here by the last two command lines of the code). 
+\normalsize 
+
+# Computing Probabilities for the Variance
+
+Suppose you have a sample of size $18$ from a population mean of 30 cm and a population variance of $90$.
+ What is the probability that $S^2$ will be less than 160?
+```{r}
+n = 18
+pop.var = 90
+value = 160
+pchisq((n - 1) * value/pop.var, n - 1)
+```
+Notice where the sample size (n = 18), population variance (pop.var = 90) and value of
+interest (value = 160) appear in the pchisq command. 
+<!-- The p-value of 0.975 agrees with
+the p-value shown in Section 5.5.
+--> 
+
+> As with other probability commands, the upper tail could have been calculated using the option `lower.tail=FALSE`.
+
+---
+
+Now consider another  exmaple about a fruit company, with data about weight of apple sauce in grams having
+distribution $X \sim N(275, 0.0016)$. Here we want to take a random sample of 9 jars and find
+the value $s^2$ so that $Prob(S^2\leq s^2) = 0.99$. 
+```{r}
+pop.var = 0.0016
+n = 9
+prob = 0.99
+pop.var * qchisq(prob, n - 1)/(n - 1)
+```
+<!--[1] 0.004018047 --> 
+
+Again notice where the sample size (n = 9), probability level (prob = 0.99) and population
+variance (pop.var = 0.0016) appear in the calculation. [Why do the variance and sample size
+appear outside of the command qchisq?] 
+<!-- The value 0.004 agrees with earlier calculations in Section 5.5.-->
+
+
+
+#  License  
+
+This document  is created for ITMD/ITMS/STAT 514, Spring 2021, at Illinois Tech. 
+
+While the course materials are generally not to be distributed outside the course without permission of the instructor, all materials posted on this page are licensed under a [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+
+Sonme of the applied examples and case studies in these notes (Topic 2 in general) are taken from one of our reference textbooks. 

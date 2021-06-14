@@ -1,0 +1,182 @@
+---
+title: "Topic 2: Sampling distribution of the mean"
+subtitle: |
+  | Background for inference of location parameter in location/scale families
+author: |
+  | Sonja Petrović
+  | Created for ITMD/ITMS/STAT 514
+date: "Spring 2021." 
+urlcolor: darkblue
+output: 
+  beamer_presentation:
+    theme: "CambridgeUS"
+    colortheme: "beaver"
+    includes:
+      in_header: header_beamer.tex
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,comment = '', fig.align = 'center'  , out.width="40%"
+)
+knitr::include_graphics
+```
+
+
+```{r packages, include=FALSE}
+#install.packages("tigerstats")
+#install.packages("reticulate")
+#devtools::install_github("rstudio/reticulate")
+library("tigerstats") # to run the basic rnorm function but with the plot included.
+library("reticulate") # to run python code
+
+scipy <- import("scipy") 
+# ^^ issues/errors? Here are 3 hints:  
+# * have you installed miniconda / anaconda? 
+# * have you tried "pip install scipy" in terminal? 
+# * have you tried the following 3 lines instead of the line above (comment out line 35, un-comment 40-42):  
+#use_condaenv("r-reticulate")
+#py_install("scipy", pip = TRUE)
+#py_module_available("scipy")
+```
+
+
+# Context 
+
+Statistics: 
+
+* Functions of random variables 
+* Therefore, are random variables  themselves.    
+  * In particular, they have their own distributions, called \attn{sampling distributions}. 
+  * Meaning of sampling distribution **(Review)** 
+
+* How does inference relate to analytics? **(Review)** 
+
+  
+\pause 
+  
+<!-- ![look](https://unsplash.com/photos/uAFjFsMS3YY) -->
+<!--Let's look at some examples. -->
+
+![](figures/look.jpeg){ width=10% }
+
+
+
+
+# Sampling distribution of the mean
+
+\redblock{{CLT} 
+ If $\overline X$ is the mean of a random sample of size $n$ taken from a population with mean $\mu$ and finite variance $\sigma^2$, then the limiting form (as $n\to\infty$)  of the distribution of the random variable  
+ $$ 
+ Z:=\frac{\overline{X}-\mu}{\sigma/\sqrt{n}} 
+ $$ 
+ is the stanard normal distribution $N(0,1)$. 
+}
+\[
+  \mu_{\overline{X}} = \mu_{population}; \quad \sigma_{\overline{X}}=\sigma_{population}/\sqrt{n}.
+\]
+
+# Sampling distribution of the mean, part 2
+
+* The presumption of normality on the distribution of $\overline{X}$ becomes more accurate as n grows larger.
+
+
+![](figures/IllustrationOfCLT.jpg){ width=50% }
+
+
+* How the distribution of $\overline{X}$ becomes closer to normal as n grows larger, beginning with the clearly nonsymmetric distribution of an individual observation (n = 1). 
+* The mean of $\overline{X}$ remains $\mu$ for any sample size and the variance of $\overline{X}$ gets smaller as n increases.
+
+
+# Example  of use of  CLT
+ An electrical firm manufactures light bulbs that have a length of life that is approximately normally distributed, with mean equal to 800 hours and a standard deviation of 40 hours. *Find the probability that a random sample of 16 bulbs will have an average life of less than 775 hours.*
+ 
+  \redblock{{Solution}
+ The sampling distribuion of $\overline{X}$ is  ... \pause approximately normal with $\mu_{\overline{X}}=800$ and $\sigma_{\overline{ X}}=40/\sqrt{16}=10$. 
+ 
+ \pause Corresponding to $\Xbar=775$, the observed $Z$-value is ...\pause $ (775-800)/10=-2.5$, and therefore \pause 
+ \[ 
+P(\Xbar < 775) = P(Z < -2.5) = 0.006
+\]
+ }
+\pause 
+
+---
+
+
+![](figures/figure82cltexample.jpg){ width=70% }
+
+
+ The desired probability is given by the area of the shaded region in the  figure.
+
+ \pause 
+\redblock{{Aha!}}
+[Discuss the meaning: ahaslides.com/STATITMW5](https://ahaslides.com/STATITMW5#3)
+
+
+# Example: solving the exact same problem in R
+
+ We can use basic R command "pnorm", or a graphical version of it from the package "tigerstats" to help us plot: 
+ 
+```{r CLTbasic, echo=TRUE, fig.width = 3, fig.height = 3}
+pnorm(775,mean=800,sd=10)
+pnormGC(775, region="below", mean=800, sd=10,graph=TRUE)
+```
+ 
+# Example: solving the exact same problem in Python
+
+The Python command that is equivalent to R's "pnorm" is called "norm.cdf". 
+
+```{python}
+from scipy.stats import norm
+norm.cdf(775,loc=800,scale=10)
+
+```
+
+\redblock{{}The "p" in the name "pnorm" refers to \emph    {probability}, and the "cdf" in Python to \emph{cumulative density function}. Both refer to the same statistical concept: the command called for the number 775 will compute the probability of a normally distributed random variable to be $\leq 775$. Which normal distribution? well, that's why we give mean (or loc) and stdev (or scale) as parameters to these functions. }
+
+# Case study 1: automobile parts 
+
+**Problem.**
+
+ An important manufacturing process produces cylindrical component parts for the automotive industry. It is important that the process produce
+ parts having a mean diameter of 5.0 millimeters. The engineer involved claims that the population mean is 5.0 millimeters. 
+ 
+ An experiment is conducted in which 100 parts produced by the process are selected randomly and the diameter measured on each. It is known that the population standard deviation is $\sigma$= 0.1 millimeter. The experiment indicates a sample average diameter of $\Xbar = 5.027$ millimeters. 
+ 
+\redblock{{Question:} 
+  Does this sample information appear to support or refute the engineer’s claim?
+}
+ 
+
+# Case study 1: Solution 
+Having  spent some time with the case study, you should arrive at  this solution: 
+
+The probability that we choose to compute is given by:
+\[ 
+P(|\Xbar - 5|\geq 0.027) = 2P\left(\frac{\Xbar - 5}{0.1\sqrt{100}}\geq 2.7\right)=0.0035 = 0.007
+\]
+```{r exAutoSoln, echo=FALSE,  fig.width = 3, fig.height = 3}
+pnormGC(bound=c(4.973,5.027), region="outside", mean=5, sd=0.1/sqrt(100),graph=TRUE)
+```
+
+\redblock{{What do you conclude?}}
+
+# What is next?
+
+A similar result holds for a  difference in two means. 
+We will see:
+
+* an example, 
+* the theorem, and 
+* a hands-on case study. 
+
+
+
+#  License  
+
+This document  is created for ITMD/ITMS/STAT 514, Spring 2021, at Illinois Tech. 
+
+While the course materials are generally not to be distributed outside the course without permission of the instructor, all materials posted on this page are licensed under a [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-nc-sa/4.0/).

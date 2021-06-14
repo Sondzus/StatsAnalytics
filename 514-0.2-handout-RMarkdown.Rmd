@@ -1,0 +1,126 @@
+---
+title: "Topic 0 - Interlude 2 - R Markdown" 
+author: 
+  - Sonja Petrovic^[Sonja Petrović,  Associate Professor of Applied  Mathematics, College of Computing, Illinios Tech.  [Homepage](https://www.SonjaPetrovicStats.com), [Email](mailto:sonja.petrovic@iit.edu).] 
+date: "Week 2, ITMD/ITMS/STAT 514, Sp21"
+output: rmdformats::readthedown
+urlcolor: darkblue
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,comment = '', fig.width = 3, fig.height = 3
+  )
+```
+
+
+--- 
+
+# Background 
+
+> What is the purpose of these notes? 
+
+1. Overview of Markdown at a high level.  
+  * Note: Lab 1 worksheet ("HW0") is  actually a really good place to start, and it gives you a template to work with. All HW assignments will be done the  same way - you will be given a Markdown file  in which you are to write your code *and* your  explanations. 
+
+# Useful links
+
+* For a comprehensive reference,  go here: [http://shiny.rstudio.com/articles/rmarkdown.html](http://shiny.rstudio.com/articles/rmarkdown.html). 
+
+* http://www.stat.cmu.edu/~cshalizi/rmarkdown/ 
+
+* https://anaconda.org/anaconda/markdown
+
+
+* Go to Lab 1 - Homework 0 - see the handout [here](https://htmlpreview.github.io/?https://github.com/Sondzus/StatsAnalytics/blob/master/next.%20week/514-0.1-handout-AboutRandPython.html)
+
+
+#  What to  do?  
+
+## Markdown
+
+* Markdown is a simple way of formatting text and data analyses. Refer to [lecture week 1](https://campuswire.com/c/G961E3137/feed/9) $\leftarrow$Campuswire link.
+* You will use RStudio to embed R code in Markdown as well as Python code (via the `reticulate` package). Refer to [additional resources week 1](https://campuswire.com/c/G961E3137/feed/10) to view TA's video on how the Python setup will work. 
+
+## First you need  to install and load packages
+
+Just like every other programming language you may be familiar with, R's capabilities can be greatly extended by installing additional "packages" and "libraries".
+
+To **install** a package, use the `install.packages()` command.  Here is an example: 
+
+```
+install.packages("ggplot2")
+```
+
+You only need to install packages once.  Once they're installed, you may use them by **loading** the libraries using the `library()` command.  For today's lab, you'll want to run the following code
+
+```{r}
+library(ggplot2) # graphics library
+```
+
+## Code chunks 
+
+Code is written in 'chunks'. Text  is written as plain text, and it can be formatted  in various ways. 
+You should check out the first link above, which will give you a comprehensive overview. 
+
+#  Expectations & deliverable requirements
+
+Professionalism is  what we  will strive for.
+
+* File formats that you submit must follow course requirements, as  stated  in homework instructions.  
+  * The moment you submit something other  than .Rmd, .html, .pdf, your homework will be returned  to you without grade.  
+* Code your write needs to  be clean and clear. Add comments when  necessary to explain what each line or function is doing.
+* Leftover  instructions: 
+  * Points will be deducted  for any text that  says "insert  code  here" or "your answer here" in your homework submission.
+* Clarity  of exposition:
+  * Write clearly. Explain precisely. English sentences need to have correct grammar, and each sentence needs to have a purpose. 
+  * Do not write things like "see above code; output is the answer". 
+  * Use of inline code chunks is  required insetad  of copying&pasting results of a computation. This is so  that if you re-do the data analysis with new data, the entire document should be updated automatically.
+  * Write your homework and reports as if  you are turning them into your clients at work. 
+    * Can everyone understand the purpose? 
+    * Is it clear what is your conclusion?
+    * Are all the graphics appropriately labeled?
+    * etc. 
+
+
+# Appendix
+
+> The rest of this document was from an R template that was placed here by default when I created a new R-markdown document! I find it useful. 
+
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+
+
+# License
+
+This document  is created for Math 563, Spring 2021, at Illinois Tech. 
+While the course materials are generally not  to be distributed outside the course without permission of the instructor,  this particular set of notes is licensed under a [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+
+
+[![Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License][image]][hyperlink]
+
+  [hyperlink]: https://creativecommons.org/licenses/by-nc-sa/4.0/
+  [image]: https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png
+    
+
+

@@ -1,0 +1,246 @@
+---
+title: "Lab: Linear regression  in R" 
+author: "Your Name Here"
+date: Prepared for  ITMD/ITMS/STAT 514, Spring 2021
+output: html_document
+urlcolor: magenta
+---
+
+This document will help you walk through some of the fundamental R commands you need for exploring linear regression models, fit, and plots. In order to do this lab, it is expected you have completed the [week 14 lecture](https://htmlpreview.github.io/?https://github.com/Sondzus/StatsAnalytics/blob/master/514-4.4-handout-RegressionWihtExamples.html). 
+
+##### Remember to change the `author: ` field on this Rmd file to your own name.
+
+We'll begin by loading some packages.
+```{r}
+library(tidyverse)
+Cars93 <- as_tibble(MASS::Cars93)
+```
+
+# Part One 
+
+## Linear regression with Cars93 data
+
+Below is figure showing how Price varies with EngineSize in the Cars93, with accompanying regression lines.  There are two plots, one for USA cars, and one for non-USA cars.
+
+```{r, fig.align='center', fig.height = 4}
+qplot(data = Cars93, x = EngineSize, y = Price, colour = Origin) + 
+  facet_wrap("Origin") + 
+  stat_smooth(method = "lm") + 
+  theme(legend.position="none")
+```
+
+**(a)** Use the `lm()` function to regress Price on EngineSize and Origin
+
+```{r}
+# Edit me
+```
+
+**(b)** Run `plot()` on your `lm` object.  Do you see any problems?
+
+```{r, fig.width = 6, fig.height = 7}
+par(mfrow = c(2,2))
+# Edit me
+```
+
+
+**(c)** Try running a linear regression with `log(Price)` as your outcome.
+
+```{r}
+# Edit me
+```
+
+**(d)** Run `plot()` on your new `lm` object.  Do you see any problems?
+
+```{r, fig.width = 6, fig.height = 7}
+par(mfrow = c(2,2))
+# Edit me
+```
+
+
+# Part Two
+ 
+
+## Learning objectives
+
+> In this part, you will gain practice with the following concepts from today's class:
+
+>- Interpreting linear regression coefficients of numeric covariates
+- Interpreting linear regression coefficients of categorical variables
+- Applying the "2 standard error rule" to construct approximate 95% confidence intervals for regression coefficients
+- Using the `confint` command to construct confidence intervals for regression coefficients
+- Using `pairs` plots to diagnose collinearity
+- Using the `update` command to update a linear regression model object
+- Diagnosing violations of linear model assumptions using `plot`
+
+We'll begin by loading some packages.
+```{r}
+#library(tidyverse)
+library(knitr)
+
+#Cars93 <- as_tibble(MASS::Cars93)
+# If you want to experiment with the ggpairs command,
+# you'll want to run the following code:
+# install.packages("GGally")
+# library(GGally)
+```
+
+## Linear regression with Cars93 data
+
+**(a)** Use the `lm()` function to regress Price on: EngineSize, Origin, MPG.highway, MPG.city and Horsepower.
+
+```{r}
+# Edit me
+```
+
+**(b)** Use the `kable()` command to produce a nicely formatted coefficients table.  Ensure that values are rounded to an appropriate number of decimal places.
+
+```{r}
+# Edit me
+```
+
+> Replace this text with your answer.
+
+
+**(c)** Interpret the coefficient of `Originnon-USA`.  Is it statistically significant?
+
+```{r}
+# Edit me
+```
+
+> Replace this text with your answer.
+
+**(d)** Interpret the coefficient of `MPG.highway`.  Is it statistically significant?
+
+```{r}
+# Edit me
+```
+
+> Replace this text with your answer.
+
+
+**(d)** Use the "2 standard error rule" to construct an approximate 95% confidence interval for the coefficient of `MPG.highway`.  Compare this to the 95% CI obtained by using the `confint` command.
+
+```{r}
+# Edit me
+```
+
+> Replace this text with your answer.
+
+**(e)**  **[Advanced topic, not required]**  Run the `pairs` command on the following set of variables: EngineSize, MPG.highway, MPG.city and Horsepower.  Display correlations in the   Do you observe any collinearities?  
+
+```{r}
+panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...)
+{
+    usr <- par("usr"); on.exit(par(usr))
+    par(usr = c(0, 1, 0, 1))
+    r <- abs(cor(x, y))
+    txt <- format(c(r, 0.123456789), digits = digits)[1]
+    txt <- paste0(prefix, txt)
+    if(missing(cex.cor)) cex.cor <- 0.4/strwidth(txt)
+    text(0.5, 0.5, txt, cex = pmax(1, cex.cor * r))
+}
+
+
+# Edit me
+```
+
+> Replace this text with your answer.
+
+**(f)** Use the `update` command to update your regression model to exclude `EngineSize` and `MPG.city`.  Display the resulting coefficients table nicely using the `kable()` command.
+
+```{r}
+# Edit me
+```
+
+
+**(g)**  Does the coefficient of `MPG.highway` change much from the original model?  Calculate a 95% confidence interval and compare your answer to part (d).  Does the CI change much from before?  Explain.
+
+```{r}
+# Edit me
+```
+
+> Replace this text with your answer.
+
+**(h)** Run the `plot` command on the linear model you constructed in part (f).  Do you notice any issues?
+
+```{r, fig.height = 12, fig.width = 12}
+# Edit me
+```
+
+> Replace this text with your answer.
+
+
+# Part Three 
+
+##  Learning objectives
+
+> In this part, you will gain practice with the following concepts from today's class:
+
+>- Interpreting linear regression coefficients of numeric covariates
+- Interpreting linear regression coefficients of categorical variables
+- Fitting linear regression models with interaction terms
+- Interpreting linear regression coefficients of interaction terms
+
+```{r}
+#library(tidyverse)
+```
+
+```{r, echo = FALSE}
+# Load data from MASS into a tibble and do pre-processing
+birthwt <- as_tibble(MASS::birthwt) %>%
+  rename(birthwt.below.2500 = low, 
+         mother.age = age,
+         mother.weight = lwt,
+         mother.smokes = smoke,
+         previous.prem.labor = ptl,
+         hypertension = ht,
+         uterine.irr = ui,
+         physician.visits = ftv,
+         birthwt.grams = bwt) %>%
+  mutate(race = recode_factor(race, `1` = "white", `2` = "black", `3` = "other")) %>%
+  mutate_at(c("mother.smokes", "hypertension", "uterine.irr", "birthwt.below.2500"),
+            ~ recode_factor(.x, `0` = "no", `1` = "yes"))
+```
+
+## Interaction terms in regression
+
+
+**(a)** Run a linear regression to better understand how birthweight varies with the mother's age and smoking status (do not include interaction terms).
+
+```{r}
+# Edit me
+```
+
+**(b)** What is the coefficient of mother.age in your regression?  How do you interpret this coefficient?
+
+```{r}
+# Edit me
+```
+
+**(c)** How many coefficients are estimated for the mother's smoking status variable?  How do you interpret these coefficients?
+
+```{r}
+# Edit me
+```
+
+**(d)** What does the intercept mean in this model?
+
+**(e)** **[Advanced topic, not required.]**  Using ggplot, construct a scatterplot with birthweight on the y-axis and mother's age on the x-axis.  Color the points by mother's smoking status, and add smoking status-specific linear regression lines using the `stat_smooth` layer.
+
+```{r}
+# Edit me
+```
+
+**(f)** **[Advanced topic, not required.]** Do the regression lines plotted in part (e) correspond to the model you fit in part (a)?  How can you tell?
+
+**(g)** Fit a linear regression model that now models potential interactions between mother's age and smoking status in their effect on birthweight.
+
+```{r}
+# Edit me
+```
+
+**(h)** Interpret your model.  Is the interaction term statistically significant?  What does it mean?
+
+```{r}
+# Edit me
+```

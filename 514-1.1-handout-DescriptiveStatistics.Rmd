@@ -1,0 +1,136 @@
+---
+title: "Topic 1.1 - Descriptive statistics" 
+author: 
+  - Sonja Petrovic^[Sonja Petrović,  Associate Professor of Applied  Mathematics, College of Computing, Illinios Tech.  [Homepage](https://www.SonjaPetrovicStats.com), [Email](mailto:sonja.petrovic@iit.edu).] 
+date: "Week 2, ITMD/ITMS/STAT 514, Sp21"
+output: rmdformats::readthedown
+urlcolor: darkblue
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,comment = ''
+  )
+```
+
+
+--- 
+
+# Background 
+
+> What is the purpose of these notes? 
+
+1. Provide a few small examples of descriptive statistics;
+2. See bar plots, histograms, boxplots;
+3. Frequency distribution - visualization. 
+
+> What is the format of this document?
+
+*(One more time, I will add these notes.)*  
+This document  was created using `R Markdown`. You can read more about it [here](https://www.markdownguide.org/getting-started/) and check out a [cheat sheet here](https://rstudio.com/wp-content/uploads/2015/02/rmarkdown-cheatsheet.pdf), which will guide you through installing RStudio, and from there the moment you create  a new `.Rmd` document, it will be a  working template to start from.  If you are used to using `LaTeX`, no worries: it can be embedded into `Markdown`, with overall simpler formatting. I hope you find this useful! 
+
+# Loading required packages
+
+To run some of the commands below, you need to load `qqplot2`: 
+```{r}
+library(ggplot2)
+```
+
+# Example of a small data set
+In R, the letter "c" stands for "column" and is used to create a data vector (column vector) of numbers. Think of it as an ordered list, simply. 
+
+## Example from a book on car battery data
+Note that we can manually enter data, in a list, and store it under the name  `car.batteries`. (Of course this is *not* how you'll be loading the data in practice!)
+```{r carbatteries}
+car.batteries<-c(
+  2.2,4.1,3.5, 4.5, 3.2, 3.7, 3.0, 2.6, 3.4, 1.6, 3.1, 3.3, 3.8, 3.1, 4.7, 3.7, 2.5, 
+  4.3, 3.4, 3.6, 2.9, 3.3, 3.9, 3.1, 3.3, 3.1, 3.7, 4.4, 3.2, 4.1, 1.9, 3.4, 4.7, 
+  3.8, 3.2, 2.6, 3.9, 3.0, 4.2, 3.5
+)
+```
+Let's plot the histogram of the above! 
+```{r fig.width=5}
+hist(car.batteries)
+hist(car.batteries,freq=FALSE)
+hist(car.batteries,freq=FALSE,ylim = c(0,1),xlim=c(1,6),main = paste("Histogram of..."),col="blue")
+lines(density(car.batteries),col="red") # estimated distribution 
+```
+
+Note that we can change the options... study the code. Note the figure width can be controlled, as well as the limits on the x and y axes, the main title, and the color. 
+
+# Using descriptive statistics to classify 'shape of data'
+
+As n grows, the histograms may change. 
+Here are examples of various normal distributions (you don't need to know what that _really_ means yet). 
+```{r descriptivestats}
+# set sample size so the code below can be re-run by just changing this quantity: 
+sample.size = 100
+```
+ 
+ What descriptive statistics would you use to summarize this kind of data? 
+```{r descriptivestats.cont}
+par(mfrow = c(1,3)) # aligns figures in a grid! in this case, a 1x3 grid. 
+# sample the data: 
+x <- rnorm(n=sample.size)
+y <- rnorm(n=sample.size,mean=250,sd=300)
+z <- rnorm(n=sample.size,mean=10,sd=1)
+# plot the histograms: 
+hist(x)
+hist(y)
+hist(z)
+```
+
+Let us introduce the "five-number summary" + mean: 
+```{r fivenumsummary}
+summary(x)
+summary(y)
+summary(z)
+```
+
+What happens when we change the sample size to $n=1000$ and re-run the same commands as above? 
+```{r rerundescriptive, echo=FALSE}
+sample.size = 1000
+par(mfrow = c(1, 3))
+x <- rnorm(n=sample.size)
+hist(x)
+y <- rnorm(n=sample.size,mean=250,sd=300)
+hist(y)
+z <- rnorm(n=sample.size,mean=10,sd=1)
+hist(z)
+```
+
+Let us visualize the quantile summaries of a  simple data set:
+```{r quantile.visualization}
+my.data<-x
+fivenum(my.data)
+par(mfrow = c(1, 2))
+boxplot(my.data)
+boxplot(my.data)
+abline(h = min(my.data), col = "Blue")
+abline(h = max(my.data), col = "Yellow")
+abline(h = median(my.data), col = "Green")
+abline(h = quantile(my.data, c(0.25, 0.75)), col = "Red")
+```
+In the code above, the third line par(mfrow = c(1, 2)) creates a grid of size 1x2 for plots; it divides the plot area into a grid so you see several plots on the same page as opposed to separately. Try changing the 1 and the 2 to something else! 
+
+
+
+## Online resources that are extremely useful:
+http://www.stat.cmu.edu/~cshalizi/rmarkdown/ 
+and 
+https://anaconda.org/anaconda/markdown
+
+
+
+# License
+
+This document  is created for Math 514, Spring 2021, at Illinois Tech. 
+While the course materials are generally not  to be distributed outside the course without permission of the instructor,  this particular set of notes is licensed under a [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+
+
+[![Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License][image]][hyperlink]
+
+  [hyperlink]: https://creativecommons.org/licenses/by-nc-sa/4.0/
+  [image]: https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png
+    
+

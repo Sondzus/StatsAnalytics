@@ -1,0 +1,261 @@
+---
+title: "Regression"
+subtitle: |
+  | Topic 4.1. Overview, simple and multiple regression 
+author: |
+  | Sonja Petrović
+  | Created for ITMD/ITMS/STAT 514
+date: "Spring 2021." 
+urlcolor: darkblue
+output: 
+  beamer_presentation:
+    slide_level: 2
+    theme: "CambridgeUS"
+    colortheme: "beaver"
+    includes:
+      in_header: header_beamer.tex
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,comment = '', fig.align = 'center'  , out.width="40%"
+)
+knitr::include_graphics
+```
+
+<!--
+## Note to self:
+These slides are *not* ready to share as .Rmd; I had some issues compiling the regression functions so the figures are copy&paste. Need to fix this before sharing code w/ class. 
+--> 
+
+## Goals of this lecture
+
+* What is a 'regression' function
+* What is prediction
+* Elements of simple&multiple linear regression 
+* Best approximation, least squares, residual sum of squares
+
+* Basic `R` command to run a regression model
+* Looking ahead: 
+  * basic `Python` command to run a regression model 
+  * polynomial regression
+
+
+# The setup: basics
+
+##  What is the prediction task? 
+
+![Figure 2.1. from ISLR: Y =`Sales` plottedagainst `TV`,`Radio` and `Newspaper` advertising budgets.](img/ISLRfig2.1.pdf){width=70%}
+
+Our goal is to develop an accurate **model** ($f$) that can be used to predict `sales` on the basis of the three media budgets: 
+\[
+  Sales \approx f(TV, Radio, Newspaper).
+\]
+
+## Notation 
+
+* `Sales` = a reponse, target, or outcome. 
+  * The variable we want to predicit. 
+  * Denoted by $Y$.
+* `TV` is one of the features, or inputs. 
+  * Denoted by $X_1$.
+* Similarly for `Radio` and `Newspaper`. 
+
+
+*  We can put all the predictors into a single input vector
+\[ X = (X_1,X_2,X_3)\]
+*  Now we can write our model as
+\[ Y=f(X) +\epsilon,\]
+where $\epsilon$ captures measurement errors and other discrepancies between the response $Y$ and the model $f$. 
+
+## What does it mean to *predict* $Y$? 
+
+```{r data_generation, echo=FALSE}
+# Load packages
+library(ggplot2)
+library(FNN)  # Used for k-nearest neighbours fit
+library(ISLR)
+
+## Note: if you get Error messages saying things like:
+## Error in library(ggplot2): there is no package called 'ggplot2'
+## you need to run the command:
+## install.packages("ggplot2")
+##
+## Similarly for other packages.
+
+# Define colour-blind-friendly colour palette
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+# Set seed for the random number generator
+set.seed(4490)
+
+
+# This is the true regression function
+f.reg <- function(x) {
+  1 + 0.1*(x - 2.5)^2
+}
+
+# Generate data
+n <- 2000 # num observations
+x <- rnorm(n, mean = 4, sd = 1.75)
+
+y <- f.reg(x) + rnorm(n, sd = 0.25)
+
+# Combine into data frame
+df <- data.frame(x = x, y = y)
+
+x.val <- 5
+y.val <- f.reg(x.val)
+```
+Here’s some simulated data.
+```{r sim_data, height = 4, width = 7, echo=FALSE}
+qplot(x = x, y = y, alpha = I(0.5), colour = I(cbPalette[1])) + 
+  #stat_function(fun = f.reg, colour = cbPalette[2], lwd = 1.25) +
+  geom_point(aes(x = x.val, y = y.val), size = 4, colour = cbPalette[4]) + 
+  geom_vline(xintercept = 5, colour = cbPalette[4], lwd = 1)
+```
+*  Look at $X = 5$. There are many different $Y$ values at $X = 5$.
+* When we say **predict** $Y$ at $X = 5$, we’re really asking:
+
+###
+\begin{center}
+What is the \attn{expected value} (average) of $Y$ at $X = 5$?
+\end{center}
+
+## The regression function 
+
+```{r reg_fun, height = 4, width = 7, echo=FALSE}
+# THE F'ING FUNCTION WON'T PLOT AND I HAVE NO TIME TO TROUBLESHOOT NOW!
+#  qplot(x = x, y = y, alpha = I(0.5), colour = I(cbPalette[1])) + 
+#  stat_function(fun = f.reg, colour = cbPalette[2], lwd = 1.25) +
+#  geom_point(aes(x = x.val, y = y.val), size = 4, colour = cbPalette[4]) + 
+#  geom_vline(xintercept = 5, colour = cbPalette[4], lwd = 1)
+```
+
+![](img/reg_fun.pdf)
+
+\redblock{{Definition: Regression function}
+Formally, the \attn{regression function} is given by $E(Y | X = x)$. This is the
+*expected value* of $Y$ at $X = x$.
+}
+
+* The \attn{ideal} or \attn{optimal} predictor of $Y$ based on $X$ is thus
+\[ f(x) = E(Y | X = x)\]
+
+## The prediction problem
+
+![](img/reg_fits.pdf)
+
+\quad \textcolor{orange}{regression function $f$} \quad   \textcolor{blue}{linear regression $\hat f$} \quad   \textcolor{darkgreen}{ 50-nearest-neighbours $\hat f$}
+
+
+\redblock{{The prediction problem}
+We want to use the observed data to \attn{construct a predictor} $\hat f(x)$ that is
+a good estimate of the \attn{regression function} $f(x) = E(Y | X = x)$.
+}
+
+##  To  summarize  
+
+* The \attn{ideal} predictor of a response $Y$ given inputs $X = x$ is given by the \textcolor{orange}{regression function}
+\[ f(x)=E(Y |X=x)\] 
+\vfill
+
+* We don’t know what \textcolor{orange}{$f$} is, so the \attn{prediction} task is to \attn{estimate} the
+\textcolor{orange}{regression function} from the available \attn{data}.
+\vfill
+
+* The various \attn{prediction methods}  are different ways of using **data** to construct estimators \attn{$\hat  f$}. 
+
+
+## The best method? 
+
+Remember: There is no free lunch...
+\vfill 
+* If the data you work with tends to have linear associations, you may be well-served by a linear model. 
+\vfill 
+* If you know that similar people like similar things, you may be well-served by a nearest-neighbours method.
+
+
+##  Simple linear regression 
+
+* Predict  a  quantitative $Y$ by single predictor  variable $X$
+
+\redblock{{Linear relationship:}\[ Y \approx \beta_0+\beta_1 X.\]}
+
+* Example:  $sales \approx \beta_0+\beta_1\times TV$. 
+
+* $\beta_0$, $\beta_1$ are two unknown constants. [*parameters*, or *coefficients*.]
+
+\redblock{{Prediction}
+\[ \hat y = \hat\beta_0+\hat\beta_1x.\]}
+
+\say{$\rightarrow$ discussion in lecture (with notes).} 
+
+## Estimating the coefficients 
+\small
+![Fig 3.1. ISLR: For the `Advertising` data, the least squares fit for the regression of `sales` onto `TV` is shown. The fit is found by minimizing the sum of squared errors. Each grey line segment represents an error, and the fit makes a compro- mise by averaging their squares. In this case a linear fit captures the essence of the relationship, although it is somewhat deficient in the left of the plot.](img/ISLRfig3.1.pdf){width=65%}
+
+
+## Many different least squares lines
+\small 
+![Fig. 3.2. ISLR: A simulated data set. Left: The red line represents the true rela- tionship, f(X) = 2 + 3X, which is known as the population regression line. The blue line is the least squares line; it is the least squares estimate for f(X) based on the observed data, shown in black. Right: The population regression line is again shown in red, and the least squares line in dark blue. In light blue, ten least squares lines are shown, each computed on the basis of a separate random set of observations. Each least squares line is different, but on average, the least squares lines are quite close to the population regression line.](img/ISLRfig3.2.pdf){width=65%}
+
+
+## Multiple linear regression 
+
+$p$ predictors, $X_1,\dots,X_p$, for modeling the continuous response variable $Y$:
+
+\[ Y=\beta_0+\beta_1X_1+\beta_2X_2+\dots+\beta_pX_p+\epsilon.
+\]
+
+* $f_L(X):=\beta_0+\sum_{j=1}^p \beta_jX_j$ is the  best linear approximation to the true regression function. 
+* The true regression function may not be linear.
+
+\vfill 
+
+### Estimating the coefficients:
+... same setup as in simple linear regression $\hat\beta_j$.
+
+\say{$\rightarrow$ discussion.} 
+
+
+# Graphics for the story about multiple linear regression
+
+##
+
+![ISLR table 3.1.](img/ISLRtable3.1.pdf)
+
+##
+
+![ISLR table 3.3.](img/ISLRtable3.3.pdf)
+
+##
+
+![ISLR fig.3.4.](img/ISLRfig3.4.pdf)
+
+##
+
+![ISLR table 3.4.](img/ISLRtable3.4.pdf)
+
+##
+
+![ISLR table 3.5](img/ISLRtable3.5.pdf)
+
+
+
+
+##  License  
+
+This document  is created for ITMD/ITMS/STAT 514, Spring 2021, at Illinois Tech. 
+While the course materials are generally not to be distributed outside the course without permission of the instructor, all materials posted on this page are licensed under a [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+
+
+Contents of this lecture is based on the chapter 3 of the textbook Gareth James, Daniela Witten, Trevor Hastie and Robert Tibshirani, 
+*' An Introduction to Statistical Learning: with Applications in R'*. 
+
+Part of this lecture  notes are extracted from Prof. Alexandra Chouldechova, 
+released under a Attribution-NonCommercial-ShareAlike 3.0 United States license.
+
+

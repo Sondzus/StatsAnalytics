@@ -1,0 +1,255 @@
+---
+title: "Linear regression in R"
+subtitle: |
+  | Topic 4.2. Estimating the coefficients in R;
+  | Model analytics and diagnostics 
+author: |
+  | Sonja Petrović
+  | Created for ITMD/ITMS/STAT 514
+date: "Spring 2021." 
+urlcolor: darkblue
+output: 
+  beamer_presentation:
+    slide_level: 2
+    theme: "CambridgeUS"
+    colortheme: "beaver"
+    includes:
+      in_header: header_beamer.tex
+---
+
+## Goals for this lecture
+
+* Understand & interpret coefficient estimates in multiple and simple linear regression
+* Understand & interpret `R` output for linear models
+* Model diagnostics & assessing model fit 
+
+> In the handout last week, we have practiced fitting a regression model in `R` and `Python`. We will continue to build on that.
+
+* The *Regression Handout* is complementary to this lecture, you should look over it again as we learn to interpret regression results. 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,comment = '', fig.align = 'center', out.width="70%"
+)
+knitr::include_graphics
+```
+
+
+
+
+## Some important questions about linear regression model
+
+
+1. Is at least one of the predictors $X_1, \dots, X_p$ useful in predicting the response?
+\vfill 
+2. Do all the predictors help to explain Y, or is only a subset of the predictors useful?
+\vfill 
+3. How well does the model fit the data?
+\vfill 
+4. Given a set of predictor values, what response value should we predict,
+and how accurate is our prediction?
+
+# Simple linear regression case 
+
+## Is There a Relationship?
+
+\redblock{{Question} Is there a relationship between the response $Y$ and predictor $X$?} 
+
+Recall from last lecture: 
+
+* check whether $\beta_1=0$
+  * Hypothesis test: $H_0:\beta_1=0$ vs. $H_1: \beta_1\neq 0$. 
+  * a $t$-statistic measures the number of standard deviations that $\beta_1$ is away from 0 
+  (specifically, $t= \frac{\hat \beta_1-0}{SE(\hat\beta_1)}$)
+  
+  * $p$-value 
+     * this is defined - as usual! - the probability of seeing the data we saw, or more extreme, under the $H_0$. 
+     * **in practice, we just read off the $t$-test. *or* read off the output of linear models.** 
+     
+
+## Assessing model fit 
+
+\redblock{{Question} 
+Suppose we have rejected the null hypothesis in favor of the alternative. Now what??}
+
+* Natural:  \attn{quantify the extent to which the model fits the data}. 
+* The quality of a linear regression fit is typically assessed using two related quantities: 
+   * the residual standard error (RSE) and 
+   * the $R^2$ statistic.
+
+\say{$\rightarrow$ advertising example - revisit the statistics output.}
+\pause 
+![ISLR table 3.1.](img/ISLRtable3.1.pdf){width=50%}\pause 
+![ISLR table 3.2. Info on least squares model on `sales` vs `TV`.](img/ISLRtable3.2.pdf){width=50%}
+
+--- 
+
+\redblock{{RSE}A measure of the lack of fit of the model simple linear regression model to the data: 
+\[ RSE = \sqrt{\frac{1}{n-2}RSS} = \sqrt{\frac{1}{n-2}\sum_{i=1}^n (y_i-\hat y_i)^2}\]
+} 
+\pause 
+* If the predictions obtained using the model are very close to the true outcome values ($\hat y_i\approx y_i$  for i = 1, . . . , n), 
+then RSE will be small
+   * we can conclude that the model fits the data very well. 
+* If $\hat y_i$ is very far from   $y_i$ for one or more observations, then the RSE may be quite large
+  * indicating that the model doesn’t fit the data well.
+
+\pause 
+
+### Interpretation 
+The RSE provides an \attn{absolute measure of lack of fit}. 
+But since it is \attn{measured in the units of $Y$} , it is not always clear what constitutes a good RSE... 
+
+--- 
+
+![ISLR table 3.2.  For the `Advertising` data, more information about the least squares model for the regression of number of units sold on TV advertising budget.](img/ISLRtable3.2.pdf)
+
+
+--- 
+
+\redblock{{$R^2$}
+The $R^2$ statistic provides an alternative measure of fit (proportion): 
+\small
+\[ R^2 = \frac{TSS-RSS}{TSS}=1  - \frac{RSS}{TSS}\] 
+}
+
+  * TSS = total sum of squares $\sum(y_i-\bar y_i)^2$
+  * RSS = residual sum of squares $\sum(y_i-\hat y_i)^2$ 
+\normalsize 
+
+<!-- 
+(see page 70 for more -- write it out) 
+To calculate R2: 
+--> 
+
+\say{Discuss: $R^2$ measures the proportion of variability in $Y$ that can be explained using $X$}
+
+\pause
+
+### Interpretation 
+Proportion of variance explained.   
+Always between 0 and 1 (independent of scale of $Y$). 
+
+### What's a good value? 
+Can be challenging to determine ... in general, depends on the application.
+
+
+## Example 
+
+\redblock{{Objective:}Use  simple linear regression on the `Auto` data set.}
+
+* Use the `lm()` function to perform a simple linear regression with `mpg` as the response and `horsepower` as the predictor. 
+```{r}
+require(ISLR)
+data(Auto)
+fit.lm <- lm(mpg ~ horsepower, data=Auto)
+```
+
+$\rightarrow$ Where is the output?? 
+
+* Let's take a look at the `fit.lm` object. 
+
+--- 
+
+\small 
+Use the `summary()` function to print the results. 
+```{r}
+summary(fit.lm)
+```
+
+--- 
+
+\tiny
+```{r echo=FALSE}
+summary(fit.lm)
+```
+\normalsize 
+
+*  Is there a relationship between the predictor and the response?
+\pause 
+   - Yes 
+\pause
+* How strong is the relationship between the predictor and the response?
+\pause 
+  - $p$-value is close to 0: relationship is strong 
+\pause
+* Is the relationship between the predictor and the response positive or negative?
+\pause 
+  - Coefficient is negative: relationship is negative 
+
+# Multiple linear regression case 
+
+##   Is There a Relationship? 
+
+Q: is there a relationship between the Response and Predictor? 
+
+* Multiple case:  $p$ predictors;  we need to ask whether all of the regression coefficients are zero: $\beta_1=\dots=\beta_p=0$? 
+\pause 
+  * Hypothesis test: $H_0:\beta_1=\dots=\beta_p=0$ vs. $H_1:$ at least one $\beta_i\neq 0$. 
+  * Which statistic? \[F= \frac{(TSS-RSS)/p}{RSS/(n-p-1)}.\]
+    * TSS and RSS defined as in simple case. 
+
+* when there is no relationship between the response and predictors, one would expect the F-statistic to take on a value close to 1.   [this can be proved via expected values]
+* else $>1$. 
+
+\say{$\rightarrow$ advertising example - revisit the statistics output.}
+
+---
+
+![](img/ISLRtable3.4.pdf)
+
+![](img/ISLRtable3.5.pdf)
+
+## Warning
+
+<!--[PAGE 76 OF BOOK]-->
+\vfill
+$\rightarrow$ in case of large $p$, may want to measure *partial effects*, and do some *variable selection* (out of scope Fall 2020). 
+\vfill 
+
+## Assessing model fit 
+
+\redblock{{Question} 
+Suppose we have rejected the null hypothesis in favor of the alternative. Now what??}
+
+* Same story as for simple regression. 
+* Measuring the quality of a linear regression fit: 
+   * the residual standard error (RSE);  
+   * the $R^2$ statistic.
+
+\say{$\rightarrow$ advertising example - revisit the statistics output.}
+
+
+---
+
+![](img/ISLRtable3.4.pdf){width=50%}
+![](img/ISLRtable3.5.pdf){width=50%}
+
+\vfill
+
+![ISLR Table 3.6: More information about the least squares model for the regression of number of units sold on TV, newspaper, and radio advertising budgets in the Advertising data. Other information about this model was displayed in Table 3.4.](img/ISLRtable3.6.pdf)
+
+
+<!-- lecture: [pages 79 & 80 of the book!!]--> 
+
+--- 
+
+In addition to looking at RSE and $R^2$  statistics, it can be useful to plot the data. 
+
+\tiny 
+![ISLR fig 3.5. For the Advertising data, a linear regression fit to sales using TV and radio as predictors. From the pattern of the residuals, we can see that there is a pronounced non-linear relationship in the data. The positive residuals (those visible above the surface), tend to lie along the 45-degree line, where TV and Radio budgets are split evenly. The negative residuals (most not visible), tend to lie away from this line, where budgets are more lopsided.](img/ISLRfig3.5.pdf){width=80%}
+ 
+  
+
+
+
+
+
+##  License  
+
+This document  is created for ITMD/ITMS/STAT 514, Spring 2021, at Illinois Tech. 
+While the course materials are generally not to be distributed outside the course without permission of the instructor, all materials posted on this page are licensed under a [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+
+
+Contents of this lecture is based on the chapter 3 of the textbook Gareth James, Daniela Witten, Trevor Hastie and Robert Tibshirani, 
+*' An Introduction to Statistical Learning: with Applications in R'*. 

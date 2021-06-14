@@ -1,0 +1,360 @@
+---
+title: "Linear regression in R & Python"
+subtitle: |
+  | Estimating the coefficients in R;
+  | Model analytics and diagnostics 
+author: 
+  - Sonja Petrovic^[Sonja Petrović,  Associate Professor of Applied  Mathematics, College of Computing, Illinios Tech.  [Homepage](https://www.SonjaPetrovicStats.com), [Email](mailto:sonja.petrovic@iit.edu).] 
+date: "Week 12, ITMD/ITMS/STAT 514, Sp21"
+output: rmdformats::readthedown
+urlcolor: darkblue
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,comment = '' #, fig.width = 3, fig.height = 3
+  )
+```
+
+
+--- 
+
+# Background 
+
+> What is the purpose of these notes? 
+
+1. Provide an example of simple and multiple linear regression; 
+2. Learn the linear regression function in `R`'
+3. Learn the linear regression function in `Python`. 
+
+> What is the format of this document?
+
+This document  was created using `R Markdown`. You can read more about it [here](https://www.markdownguide.org/getting-started/) and check out a [cheat sheet here](https://rstudio.com/wp-content/uploads/2015/02/rmarkdown-cheatsheet.pdf), which will guide you through installing RStudio, and from there the moment you create  a new `.Rmd` document, it will be a  working template to start from.  If you are used to using `LaTeX`, no worries: it can be embedded into `Markdown`, with overall simpler formatting. I hope you find this useful! 
+
+### Installing and loading packages
+
+Just like every other programming language you may be familiar with, R's capabilities can be greatly extended by installing additional "packages" and "libraries".
+
+To **install** a package, use the `install.packages()` command.  You'll want to run the following commands to get the necessary packages for today's lab:
+
+```
+install.packages("rmdformats")
+install.packages("ggplot2")
+install.packages("knitr")
+install.packages("ISLR")
+```
+
+You only need to install packages once.  Once they're installed, you may use them by **loading** the libraries using the `library()` command.  For today's lab, you'll want to run the following code
+
+```{r}
+library(ggplot2) # graphics library
+library(knitr)   # contains kable() function
+options(scipen = 4)  # Suppresses scientific notation
+
+library("ISLR") # to obtain the data sets used in the book 
+library("reticulate") # so we can use Python
+```
+
+```{r}
+# this is another r-code chunk to install the packages i need for Python: 
+py_install("pandas")
+py_install("statsmodels")
+py_install("matplotlib")
+```
+
+
+# Context 
+
+Recall some important questions about linear regression model
+
+1. Is at least one of the predictors $X_1, \dots, X_p$ useful in predicting the response?
+2. Do all the predictors help to explain Y, or is only a subset of the predictors useful?
+3. How well does the model fit the data?
+4. Given a set of predictor values, what response value should we predict,
+and how accurate is our prediction?
+
+## Review: 
+
+These concepts will be important to keep in mind: 
+* what is the **population regression line**?
+* what is the **estimated regression line**? 
+* what is the meaning of the **estimated intercept** when you estimate the regression line?
+* what is the meaning of the **estimated coefficients**?
+
+
+# Simple linear regression example in `R`
+
+Throughout this handout, we will be working on the `Auto` data set that comes with the `ISLR` package in `R`. 
+```{r}
+require(ISLR)
+data(Auto)
+```
+
+## `lm` and output
+
+Here is how to do simple linear regression in `R`. 
+
+* Use the `lm()` function to perform a simple linear regression with `mpg` as the response and `horsepower` as the predictor using the following code . 
+```{r}
+fit.lm <- lm(mpg ~ horsepower, data=Auto)
+```
+
+Wait a minute.  Where is the output?? 
+
+> As usual, it's stored in the object to the left of `<-` and so it is not printed. 
+
+ Let's take a look at the `fit.lm` object. 
+Use the `summary()` function to print the results. 
+```{r}
+summary(fit.lm)
+```
+
+
+## Interpreting the output
+
+*  Is there a relationship between the predictor and the response?
+
+>  Yes. 
+
+* How strong is the relationship between the predictor and the response?
+
+> $p$-value is close to 0: relationship is strong
+
+* Is the relationship between the predictor and the response positive or negative?
+
+>  Coefficient is negative: relationship is negative 
+
+
+* What is the predicted `mpg` associated with a `horsepower` of $98$? What are the associated 95% confidence and prediction intervals?
+
+First you have to make a new data frame object which will contain the new point: 
+```{r}
+new <- data.frame(horsepower = 98)
+predict(fit.lm, new) # predicted mpg
+predict(fit.lm, new, interval="confidence") # conf interval
+predict(fit.lm, new, interval="prediction") # pred interval
+```
+
+   * $\rightarrow$ confidence interval vs. prediction interval $\leftarrow$ 
+
+>  What is the difference between confidence and prediction intervals!?   $\rightarrow$ we will learn in the next lecture!! 
+
+
+## Simple plots
+
+
+Plot the response and the predictor. Use the `abline()` function to display the least squares regression line.
+
+```{r} 
+plot(Auto$horsepower, Auto$mpg)
+abline(fit.lm, col="red")
+```
+
+
+Use the `plot()` function to produce diagnostic plots of the least squares regression fit. Comment on any problems you see with the fit.
+
+```{r} 
+par(mfrow=c(2,2))
+plot(fit.lm)
+```
+
+* residuals vs fitted plot shows that the relationship is non-linear
+
+
+# Simple linear regression example in `Python`
+
+> Please note: 
+ In this section, all code chunks are `python` code chunks. This means we have written `{python}` rather than `{r}` at the top. 
+
+
+```{python}
+import pandas as pd
+import statsmodels.api as sm
+import matplotlib.pyplot as plt
+```
+
+```{python, include = FALSE}
+path_to_file="/Users/sonja/Documents/GitHub/StatITM514fa20/Stat514sp21/data/auto.csv"
+# path_to_file="Desktop/auto.csv"
+df= pd.read_csv(path_to_file)  # Remember to change the path of the file when you are running the code and use thep ath to file you downloaded to your computer 
+```
+
+
+```
+path_to_file="Desktop/auto.csv"
+df= pd.read_csv(path_to_file)  # Remember to change the path of the file when you are running the code and use thep ath to file you downloaded to your computer 
+```
+
+Now that we have imported the data let's take a peek:
+```{python}
+df.head()
+```
+
+
+## `sm.OLS` and output
+The target variable that we are interested to study is "mpg" and we want to see the relationship of it with other variables.
+
+First, a simple linear regression on "horsepower" and "mpg" is done like this: 
+
+```{python}
+X,y= df["horsepower"] , df["mpg"]
+```
+
+For this purpose we are using `statsmodels.api`. One thing to note before making the model is to keep this in mind that for containing an intercept in our model we should add a new `"constant variable"` to our predictor(s) because `statsmodels.api` object does perform a regression without an intercept! 
+
+
+```{python}
+#Adding constant because we want the intercept
+X = sm.add_constant(X)
+
+#with the following command you can fit the model, remember to put the y(target) first!
+model =sm.OLS(y,X).fit()
+```
+
+```{python}
+#The following command will provide a good summary of the fitted model:
+model.summary()
+```
+
+## Simple plots 
+
+Now lets plot the fitted model: 
+```{python}
+fix, ax = plt.subplots()
+
+ax.scatter(df["horsepower"], model.predict(), label='fitted')
+ax.scatter(df["horsepower"], df["mpg"], label='original')
+
+ax.legend()
+ax.set_title("Linear model fitted values vs the original dataset")
+ax.set_xlabel("horsepower")
+ax.set_ylabel("mpg")
+plt.show()
+```
+
+
+## Prediction
+
+If you want to predict a new value such as `98`, you have to give it as an input like `[1,98]` for predicting because of the intercept, if you want to predict many values like a set called New_values, all you need to put in the argument is : `exog=[1,New_vallues]`. 
+```{python}
+model.predict(exog=[1,98])
+```
+
+
+# Quick reference to multiple linear regression
+
+
+Q: is there a relationship between the Response and Predictor? 
+
+* Multiple case:  $p$ predictors;  we need to ask whether all of the regression coefficients are zero: $\beta_1=\dots=\beta_p=0$? 
+  * Hypothesis test: $H_0:\beta_1=\dots=\beta_p=0$ vs. $H_1:$ at least one $\beta_i\neq 0$. 
+  * Which statistic? \[F= \frac{(TSS-RSS)/p}{RSS/(n-p-1)}.\]
+    * TSS and RSS defined as in simple case. 
+
+* when there is no relationship between the response and predictors, one would expect the F-statistic to take on a value close to 1.   [this can be proved via expected values]
+* else $>1$. 
+
+* $\rightarrow$ in case of large $p$, may want to measure *partial effects*, and do some *variable selection* 
+
+
+# Multiple linear regression  example in  `R`
+
+
+* Produce a scatterplot matrix which includes all of the variables in the data set.
+```{r}
+pairs(Auto,lower.panel = NULL)
+```
+What are we looking at? (Read the help page on `pairs`.)
+
+* Compute the matrix of correlations between the variables using the function `cor()`. You will need to exclude the `name` variable, which is qualitative.
+
+```{r}
+cor(subset(Auto, select=-name))
+```
+
+*  Use the `lm()` function to perform a multiple linear regression with `mpg` as the response and *all* other variables except name as the predictors. Print results. 
+ 
+```{r}
+fit.lm <- lm(mpg~.-name, data=Auto)
+summary(fit.lm)
+```
+Let's refer to the output in this last code chunk: 
+
+* Is there a relationship between the predictors and the response?
+
+   - There is a relationship between predictors and response. 
+
+* Which predictors appear to have a statistically significant relationship to the response?
+
+   - `weight`, `year`, `origin` and `displacement` have statistically significant relationships 
+
+* What does the coefficient for the `year` variable suggest?
+
+   - $0.75$ coefficient for `year` suggests that later model year cars have better (higher) `mpg`. 
+
+
+* Use the `plot() function to produce diagnostic plots of the linear regression fit. 
+```{r}
+par(mfrow=c(2,2))
+plot(fit.lm)
+```
+* Comment on any problems you see with the fit. Do the residual plots suggest any unusually large outliers? 
+  * There is evidence of non-linearity
+
+  
+
+# Multiple linear regression  example in `Python` 
+
+```{python}
+#we are going to use all the features except 'name' and of course dropping the 'mpg' too
+X = df.drop(labels=['name','mpg'],axis=1)  
+y=df['mpg']
+```
+
+```{python}
+X = sm.add_constant(X)  #adding constant for intercept
+model =sm.OLS(y,X).fit()
+```
+
+```{python}
+model.summary()
+```
+
+
+
+
+# Appendix
+Some resources and further reading: 
+
+* Read about model diagnostics in [ISLR book](https://www.statlearning.com/). 
+* Read about regression (more in depth) in [ISLR book](https://www.statlearning.com/).
+
+
+* To view `lm {stats}	R Documentation`, type: 
+```
+help(lm)
+```
+and/or visit:  
+<https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/lm> 
+
+
+
+# License
+
+This document  is created for Math 514, Spring 2021, at Illinois Tech. 
+While the course materials are generally not  to be distributed outside the course without permission of the instructor,  this particular set of notes is licensed under a [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+
+
+
+Contents of this lecture is based on the chapter 3 of the textbook Gareth James, Daniela Witten, Trevor Hastie and Robert Tibshirani, 
+*' An Introduction to Statistical Learning: with Applications in R'*. 
+
+Python code for this lecture is developed by Amirreza Eshraghi, our TA in 2020/21. 
+
+[![Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License][image]][hyperlink]
+
+  [hyperlink]: https://creativecommons.org/licenses/by-nc-sa/4.0/
+  [image]: https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png
+    
+
+

@@ -1,0 +1,814 @@
+---
+title: "Topic 4 - Linear regression in R" 
+author: 
+  - Sonja Petrovic^[Sonja Petrović,  Associate Professor of Applied  Mathematics, College of Computing, Illinios Tech.  [Homepage](https://www.SonjaPetrovicStats.com), [Email](mailto:sonja.petrovic@iit.edu).] 
+date: "Week 14, ITMD/ITMS/STAT 514, Sp21"
+output: rmdformats::readthedown
+urlcolor: darkblue
+---
+
+
+# Setup 
+
+Let's begin by loading the packages we'll need to get started
+```{r}
+library(tidyverse)
+library(GGally)
+library(knitr)
+```
+
+
+```{r, echo = FALSE}
+# Load data from MASS into a tibble and do pre-processing
+birthwt <- as_tibble(MASS::birthwt) %>%
+  rename(birthwt.below.2500 = low, 
+         mother.age = age,
+         mother.weight = lwt,
+         mother.smokes = smoke,
+         previous.prem.labor = ptl,
+         hypertension = ht,
+         uterine.irr = ui,
+         physician.visits = ftv,
+         birthwt.grams = bwt) %>%
+  mutate(race = recode_factor(race, `1` = "black", `2` = "white", `3` = "other")) %>%
+  mutate_at(c("mother.smokes", "hypertension", "uterine.irr", "birthwt.below.2500"),
+            ~ recode_factor(.x, `0` = "no", `1` = "yes"))
+```
+
+## Linear regression
+
+Linear regression is just a more general form of ANOVA, which itself is a generalized t-test.  In each case, we're assessing if and how the mean of our outcome $y$ varies with other variables.  Unlike t-tests and ANOVA, which are restricted to the case where the factors of interest are all categorical,  regression allows you to also model the effects of continuous variables. 
+
+> **linear regression** is used to model linear relationship between an outcome variable, $y$, and a set of *covariates* or *predictor variables* $x_1, x_2, \ldots, x_p$. 
+
+## Loading the data 
+
+For our first example we'll look at a small data set in which we're interested in predicting the crime rate per million population based on socio-economic and demographic information at the state level.  
+
+Let's first import the data set and see what we're working with.
+
+```{r}
+# Import data set
+# "https://github.com/Sondzus/StatsAnalytics/blob/master/data/crime_simple.txt"
+crime <- read_delim("http://www.andrew.cmu.edu/user/achoulde/94842/data/crime_simple.txt", delim = "\t")
+```
+
+**The variable names that this data set comes with are very confusing, and even misleading.**
+
+R: Crime rate: # of offenses reported to police per million population
+
+Age: The number of males of age 14-24 per 1000 population
+
+S: Indicator variable for Southern states (0 = No, 1 = Yes)
+
+Ed: Mean # of years of schooling x 10 for persons of age 25 or older
+
+Ex0: 1960 per capita expenditure on police by state and local government
+
+Ex1: 1959 per capita expenditure on police by state and local government
+
+LF: Labor force participation rate per 1000 civilian urban males age 14-24
+
+M: The number of males per 1000 females
+
+N: State population size in hundred thousands
+
+NW: The number of non-whites per 1000 population
+
+U1: Unemployment rate of urban males per 1000 of age 14-24
+
+U2: Unemployment rate of urban males per 1000 of age 35-39
+
+W: Median value of transferable goods and assets or family income in tens of $
+
+X: The number of families per 1000 earning below 1/2 the median income
+
+**We really need to give these variables better names**
+
+
+```{r}
+# Assign more meaningful variable names, also
+# Convert is.south to a factor
+# Divide average.ed by 10 so that the variable is actually average education
+# Convert median assets to 1000's of dollars instead of 10's
+crime <- crime %>%
+  rename(crime.per.million = R,
+         young.males = Age,
+         is.south = S,
+         average.ed = Ed,
+         exp.per.cap.1960 = Ex0,
+         exp.per.cap.1959 = Ex1,
+         labour.part = LF,
+         male.per.fem = M,
+         population = N,
+         nonwhite = NW,
+         unemp.youth = U1,
+         unemp.adult = U2,
+         median.assets = W,
+         num.low.salary = X) %>%
+  mutate(is.south = as.factor(is.south),
+         average.ed = average.ed / 10,
+         median.assets = median.assets / 100)
+# print summary of the data
+summary(crime)
+```
+
+# EDA
+## First step: some plotting and summary statistics
+
+You can start by feeding everything into a regression, but it's often a better idea to construct some simple plots (e.g., scatterplots and boxplots) and summary statistics to get some sense of how the data behaves.
+
+```{r, fig.align='center', fig.height=4, fig.width=5}
+# Scatter plot of outcome (crime.per.million) against average.ed
+qplot(average.ed, crime.per.million, data = crime)
+# correlation between education and crime
+with(crime, cor(average.ed, crime.per.million))
+```
+
+This seems to suggest that higher levels of average education are associated with higher crime rates.  *Can you come up with an explanation for this phenomenon?*
+
+```{r, fig.align='center', fig.height=4, fig.width=5}
+# Scatter plot of outcome (crime.per.million) against median.assets
+qplot(median.assets, crime.per.million, data = crime)
+# correlation between education and crime
+with(crime, cor(median.assets, crime.per.million))
+```
+
+There also appears to be a positive association between median assets and crime rates.
+
+```{r, fig.align='center', fig.height=5, fig.width=5}
+# Boxplots showing crime rate broken down by southern vs non-southern state
+qplot(is.south, crime.per.million, geom = "boxplot", data = crime)
+```
+
+# Constructing a regression model
+
+To construct a linear regression model in R, we use the `lm()` function.  You can specify the regression model in various ways.  The simplest is often to use the formula specification.
+
+The first model we fit is a regression of the outcome (`crimes.per.million`) against all the other variables in the data set.  You can either write out all the variable names. or use the shorthand `y ~ .` to specify that you want to include all the variables in your regression.
+
+```{r}
+crime.lm <- lm(crime.per.million ~ ., data = crime)
+# Summary of the linear regression model
+crime.lm
+summary(crime.lm)
+```
+
+R's default is to output values in scientific notation.  This can make it hard to interpret the numbers.  Here's some code that can be used to force full printout of numbers.
+
+```{r}
+options(scipen=4)  # Set scipen = 0 to get back to default
+```
+
+```{r}
+summary(crime.lm)
+```
+
+Looking at the p-values, it looks like `num.low.salary` (number of families per 1000 earning below 1/2 the median income), `unemp.adult` (Unemployment rate of urban males per 1000 of age 35-39), `average.ed` (Mean # of years of schooling 25 or older), and `young.males` (number of males of age 14-24 per 1000 population) are all statistically significant predictors of crime rate.  
+
+The coefficients for these predictors are all positive, so crime rates are positively associated with wealth inequality, adult unemployment rates, average education levels, and high rates of young males in the population.  
+
+## Exploring the lm object
+
+What kind of output do we get when we run a linear model (`lm`) in R?
+
+```{r}
+# List all attributes of the linear model
+attributes(crime.lm)
+
+# coefficients
+crime.lm$coef
+```
+
+None of the attributes seem to give you p-values.  Here's what you can do to get a table that allows you to extract p-values. 
+
+```{r}
+# Pull coefficients element from summary(lm) object
+round(summary(crime.lm)$coef, 3)
+```
+
+If you want a particular p-value, you can get it by doing the following
+
+```{r}
+# Pull the coefficients table from summary(lm)
+crime.lm.coef <- round(summary(crime.lm)$coef, 3)
+# See what this gives
+class(crime.lm.coef)
+attributes(crime.lm.coef)
+crime.lm.coef["average.ed", "Pr(>|t|)"]
+```
+
+The coefficients table is a matrix with named rows and columns.  You can therefore access particular cells either by numeric index, or by name (as in the example above).
+
+## Plotting the lm object
+
+```{r, fig.align='center', fig.height=4.5, fig.width=6, cache=TRUE}
+plot(crime.lm)
+```
+
+These four plots are important diagnostic tools in assessing whether the linear model is appropriate.  The first two plots are the most important, but the last two can also help with identifying outliers and non-linearities.  
+
+**Residuals vs. Fitted** When a linear model is appropriate, we expect 
+
+1. the residuals will have constant variance when plotted against fitted values; and 
+
+2. the residuals and fitted values will be uncorrelated.  
+  
+If there are clear trends in the residual plot, or the plot looks like a funnel, these are clear indicators that the given linear model is inappropriate.
+
+**Normal QQ plot** You can use a linear model for prediction even if the underlying normality assumptions don't hold.  However, in order for the p-values to be believable, the residuals from the regression must look approximately normally distributed.  
+
+**Scale-location plot** This is another version of the residuals vs fitted plot.  There should be no discernible trends in this plot.
+
+**Residuals vs Leverage**.  Leverage is a measure of how much an observation influenced the model fit.  It's a one-number summary of how different the model fit would be if the given observation was excluded, compared to the model fit where the observation is included.  Points with *high residual* (poorly described by the model) and *high leverage* (high influence on model fit) are outliers.  They're skewing the model fit away from the rest of the data, and don't really seem to fit with the rest of the data.
+
+
+### A detour: Diagnostic plots for diamonds data.
+
+> The residual vs fitted and scale-location diagnostic plots for the crime data aren't especially insightful, largely due to the very small sample size.  Below we look at the `diamonds` data to see what a more typical anaylsis of linear model diagnostic plots might reveal.
+
+
+```{r}
+diamonds.lm <- lm(price ~ carat + cut + clarity + color, data = diamonds)
+
+plot(diamonds.lm)
+```
+
+**Residuals vs. Fitted** 
+
+There is a clear indication of non-linearity present in this plot.  Furthermore, we see that the variance appears to be increasing in fitted value.  
+
+**Normal QQ plot** The residuals appear highly non-normal.  Both the lower tail and upper tail are heavier than we would expect under normality. This may be due to the non-constant variance issue we observed in the Residuals vs. Fitted plot.
+
+**Scale-location plot** We see a clear increasing trend in residual variance that runs through most of the plot.  This is indicated by the upward slope of the red line, which we can interpret as the standard deviation of the residuals at the given level of fitted value.  
+
+**Residuals vs Leverage**.  None of the points appear to be outliers.  
+
+> Here's what happens if we log-transform both the price and carat variables.
+
+```{r}
+diamonds.lm2 <- lm(log(price) ~ I(log(carat)) + cut + clarity + color, data = diamonds)
+
+plot(diamonds.lm2)
+```
+
+While there remains a very slight indication of non-linearity in the Residual vs Fitted plot, the non-constant variance issue appears to have been addressed by the variable transformations.  The Normal QQ plot indicates that the residuals have a heavier tailed distribution, but since we have a very large sample size this should not cause problems for inference.  There do not appear to be any clear outliers in the data.
+
+## Collinearity and pairs plots
+
+In your regression class you probably learned that **collinearity** can throw off the coefficient estimates.  To diagnose collinearity, we can do a plot matrix.  In base graphics, this can be accomplished via the `pairs` function.
+
+As a demo, let's look at some of the economic indicators in our data set.
+
+```{r, fig.height = 10, fig.width = 10}
+economic.var.names <- c("exp.per.cap.1959", "exp.per.cap.1960", "unemp.adult", "unemp.youth", "labour.part", "median.assets")
+pairs(crime[,economic.var.names])
+round(cor(crime[,economic.var.names]), 3)
+```
+
+Since the above-diagonal and below-diagonal plots contain essentially the same information, it's often more useful to display some other values in one of the spaces.  In the example below, we use the panel.cor function from the `pairs()` documentation to add text below the diagonal.
+
+```{r, fig.height = 10, fig.width = 10}
+# Function taken from ?pairs Example section.  
+panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...)
+{
+    usr <- par("usr"); on.exit(par(usr))
+    par(usr = c(0, 1, 0, 1))
+    r <- abs(cor(x, y))
+    txt <- format(c(r, 0.123456789), digits = digits)[1]
+    txt <- paste0(prefix, txt)
+    if(missing(cex.cor)) cex.cor <- 0.8/strwidth(txt)
+    text(0.5, 0.5, txt, cex = pmax(1, cex.cor * r))
+}
+
+# Use panel.cor to display correlations in lower panel.
+pairs(crime[,economic.var.names], lower.panel = panel.cor)
+```
+
+```{r, fig.height = 10, fig.width = 10, cache = TRUE}
+# ggpairs from GGally library
+# Unlike pairs(), ggpairs() works with non-numeric
+# predictors in addition to numeric ones.
+# Consider ggpairs() for your final project
+ggpairs(crime[,c(economic.var.names, "is.south")], axisLabels = "internal")
+```
+
+Looking at the plot, we see that many of the variables are very strongly correlated.  In particular, police expenditures are pretty much identical in 1959 and 1960.  This is an extreme case of collinearity.  Also, unsurprisingly, youth unemployment and adult unemployment are also highly correlated.  
+
+Let's just include the 1960 police expenditure variable, and also drop the youth unemployment variable.  We'll do this using the `update()` function.  Here's what happens.
+
+```{r}
+crime.lm.2 <- update(crime.lm, . ~ . - exp.per.cap.1959 - unemp.youth)
+summary(crime.lm.2)
+crime.lm.summary.2 <- summary(crime.lm.2)
+```
+
+When outputting regression results, it's always good to use the `kable()` function to make things look a little nicer.
+
+```{r, results = 'asis'}
+kable(crime.lm.summary.2$coef, 
+      digits = c(3, 3, 3, 4), format = 'markdown')
+```
+
+
+# Thinking more critically about linear regression
+
+So far we have seen how to run a linear regression using the `lm()` function and how to use the `plot()` and `pairs()` commands to diagnose common problems such as non-constant variance, outliers, and collinearity among predictors.  In this section we'll delve deeper into linear regression to better understand how to interpret the output.  Our discussion will focus on interpreting factors (categorical variables) and interaction terms.
+
+Let's pick up where we just left off. At the last stage, we had a regression with a couple of variable removed to address collinearity issues.
+
+```{r}
+crime.lm <- lm(crime.per.million ~ ., data = crime)
+
+# Remove 1959 expenditure and youth unemployment
+crime.lm2 <- update(crime.lm, . ~ . - exp.per.cap.1959 - unemp.youth)
+```
+
+Here's a comparison of the regression models (with and without the collinearity problem).
+
+```{r, results = 'asis'}
+kable(summary(crime.lm)$coef, 
+      digits = c(3, 3, 3, 4), format = 'markdown')
+crime.lm.summary2 <- summary(crime.lm2)
+kable(crime.lm.summary2$coef, 
+      digits = c(3, 3, 3, 4), format = 'markdown')
+```
+
+Observe that the coefficient of 1960 expenditure went from being non-signficant to significant (p-value is now very small).
+
+## What does it mean for a coefficient to be statistically significant?
+
+Let's look at the coefficient of `average.ed` in the `crime.lm2` model.  This coefficient is `r coef(crime.lm2)["average.ed"]`.  We might interpret it by saying that: 
+
+> All else being equal between two states, a 1-year increase in average education appears to be associated with a  `r round(coef(crime.lm2)["average.ed"], 1)` increase in crime rates per million.  
+
+In addition to the coefficient estimate, we also have a standard error estimate and a p-value.  The standard error tells us how uncertain our estimate of the coefficient of `average.ed` actually is.  In this case, our estimate is `r round(coef(crime.lm2)["average.ed"], 1)`, but the standard error is `r round(summary(crime.lm2)$coef["average.ed", "Std. Error"], 3)`.  Using the "2 standard error rule" of thumb, we could refine our earlier statement to say:
+
+> Based on the data, we estimate a 1-year increase in average education is associated with a `r round(coef(crime.lm2)["average.ed"], 1)` +/- `r 2 * round(summary(crime.lm2)$coef["average.ed", "Std. Error"], 1)` increase in crimes per million population
+
+In other words, our estimate is quite uncertain (has a large standard error).
+
+The "2 standard error rule" is a nice quick way of putting together approximate 95% confidence intervals for regression coefficients.  Here's a more principled approach, which works for any desired confidence level.  This approach uses the `confint` command.
+
+```{r}
+# all 95% confidence intervals
+confint(crime.lm2)
+# Just for education
+confint(crime.lm2, parm = "average.ed")
+# 75% confidence interval
+confint(crime.lm2, parm = "average.ed", level = 0.75)
+# How does 2 SE rule compare to confint output?
+#  lower endpoint
+coef(crime.lm2)["average.ed"] - 2* summary(crime.lm2)$coef["average.ed", "Std. Error"]
+# upper endpoint
+coef(crime.lm2)["average.ed"] + 2* summary(crime.lm2)$coef["average.ed", "Std. Error"]
+```
+
+
+
+The p-value of `r summary(crime.lm2)$coef["average.ed", "Pr(>|t|)"]` is less than 0.05, so this tells us that the coefficient estimate is statistically significantly different from 0. What does this mean?  It means that the data suggests the actual association between average education and crime rates is non-zero.  i.e., the data shows evidence that the coefficient is non-zero.  
+
+One of the exercises on Homework 5 will walk you through running a simulation experiment to better understand what signficance means in a regression setting.
+
+Here's a preview.  The red line is the true regression line.  The grey points show a random realization of the data.  The various black curves show 100 estimates of the regression line based on repeated random realizations of the data.  
+
+![Estimated regression lines](img/regressionlines.png)
+
+## What happens when we have collinearity?
+
+Here's an extreme example of perfectly collinear data.
+
+```{r}
+my.data <- data.frame(y =  c(12, 13, 10, 5, 7, 12, 15),
+                      x1 = c(6, 6.5, 5, 2.5, 3.5, 6, 7.5),
+                      x2 = c(6, 6.5, 5, 2.5, 3.5, 6, 7.5))
+my.data
+```
+
+What do you notice?
+
+By construction, `x1` and `x2` are exactly the same variable, and the outcome `y` is perfectly modelled as $y = x_1 + x_2$.
+
+But there's a problem... because the following are also true
+
+$y = 2 x_1$
+
+$y = 3 x_1 - x_2$
+
+$y = -400x_1 + 402 x_2$
+
+In other words, based on the data, there's no way of figuring out which of these models is "right".  However, if we drop one of the variables from the model, we know exactly what the coefficient of the other should be.
+
+Colinearity amongst predictors causes problems for regression precisely because the model is unable to accurately distinguish between many nearly equally plausible linear combinations of colinear variables.  This can lead to large standard errors on coefficients, and even coefficient signs that don't make sense.  
+
+# Practical considerations in linear regression
+
+After dealing with the colinearity issue by removing the 1959 expenditure variable, we see that `exp.per.cap.1960` is now highly significant.  
+```{r}
+crime.lm.summary2$coef["exp.per.cap.1960",]
+```
+
+This is interesting.  It's essentially saying that, all else being equal, every dollar per capita increase in police expenditure is on average associated with an increase in crime of 1.13 per million population.  
+
+```{r}
+crime.lm.summary2$coef["average.ed",]
+```
+
+Also, for every unit increase in average education, we find that the number of reported crimes increases by about 15.3 per million.  
+
+One of my main reasons for selecting this data set is that it illustrates some of the more common pitfalls in interpreting regression models.  
+
+**Just because a coefficient is significant, doesn't mean your covariate causes your response**
+
+- This is the old adage that correlation does not imply causation.  In this example, we have strong evidence that higher police expenditures are positively associated with crime rates.  This doesn't mean that decreasing police expenditure will lower crime rate.  The relationship is not causal -- at least not in that direction.  A more reasonable explanation is that higher crime rates promt policy makers to increase police expenditure.
+
+**There's a difference between practical significance and statistical significance**
+
+- Both `average.ed` and `exp.per.cap.1960` are statistically significant.  `exp.per.cap.1960` has a much more significant p-value, but also a much smaller coefficient.  When looking at your regression model, you shouldn't just look at the p-value column.  The really interesting covariates are the ones that are significant, but also have the largest effect.  
+
+Note also that the units of measurement should be taken into account when thinking about coefficient estimates and effect sizes.  Suppose, for example, that we regressed income (measured in $) on height and got a coefficient estimate of 100, with a standard error of 20.  Is 100 a large effect?  *The answer depends on the units of measurement.*  If height had been measured in metres, we would be saying that every 1m increase in height is associated on average with a $100 increase in income.  That's too small an effect for us to care about.  Now what if height was measured in mm?  Then we'd be saying that every 1mm increase in height is associated on average with a $100 increase in income.  Since 1inch = 25.4mm, this means that every 1inch difference in height is on average associated with a $2540 difference in income.  This would be a tremendously large effect.  **Moral of the story**:  Whether an effect is 'practically significant' depends a lot on the unit of measurement.
+
+
+# Factors in linear regression
+
+## Interpreting coefficients of factor variables
+
+In the case of quantitative predictors, we're more or less comfortable with the interpretation of the linear model coefficient as a "slope" or a "unit increase in outcome per unit increase in the covariate".  This isn't the right interpretation for factor variables.  In particular, the notion of a slope or unit change no longer makes sense when talking about a categorical variable.  E.g., what does it even mean to say "unit increase in major" when studying the effect of college major on future earnings?
+
+To understand what the coefficients really mean, let's go back to the birthwt data and try regressing birthweight on mother's race and mother's age. 
+
+```{r}
+# Fit regression model
+birthwt.lm <- lm(birthwt.grams ~ race + mother.age, data = birthwt)
+
+# Regression model summary
+summary(birthwt.lm)
+```
+
+Note that there are two coefficients estimated for the race variable (`raceother` and `racewhite`).  What's happening here?  
+
+When you put a factor variable into a regression, you're allowing a **different intercept at every level of the factor**.  In the present example, you're saying that you want to model `birthwt.grams` as 
+
+<center>
+**Baby's birthweight = Intercept(based on mother's race) + $\beta$ * mother's age**
+</center>
+<br>
+
+Essentially you're saying that your data is broken down into 3 racial groups, and you want to model your data as having the same slope governing how birthweight changes with mother's age, but potentially different intercepts.  Here's a picture of what's happening. 
+
+```{r}
+# Calculate race-specific intercepts
+intercepts <- c(coef(birthwt.lm)["(Intercept)"],
+                coef(birthwt.lm)["(Intercept)"] + coef(birthwt.lm)["raceother"],
+                coef(birthwt.lm)["(Intercept)"] + coef(birthwt.lm)["racewhite"])
+
+lines.df <- data.frame(intercepts = intercepts,
+                       slopes = rep(coef(birthwt.lm)["mother.age"], 3),
+                       race = levels(birthwt$race))
+
+qplot(x = mother.age, y = birthwt.grams, color = race, data = birthwt) + 
+  geom_abline(aes(intercept = intercepts, 
+                  slope = slopes, 
+                  color = race), data = lines.df)
+```
+
+How do we interpret the 2 race coefficients?  For categorical variables, the interpretation is relative to the given baseline.  The baseline is just whatever level comes first (here, "black").  E.g., the estimate of `raceother` means that the estimated intercept is `r round(coef(birthwt.lm)["raceother"], 1)` higher among "other" race mothers compared to black mothers.  Similarly, the estimated intercept is `r round(coef(birthwt.lm)["racewhite"], 1)` higher for white mothers than black mothers.
+
+> Another way of putting it:  Among mothers of the same age, babies of white mothers are born on average weighing `r round(coef(birthwt.lm)["racewhite"], 1)`g more than babies of black mothers.
+
+## Why is one of the levels missing in the regression?  
+
+As you've already noticed, there is no coefficient called "raceblack" in the estimated model.  This is because this coefficient gets absorbed into the overall (Intercept) term.
+
+Let's peek under the hood.  Using the `model.matrix()` function on our linear model object, we can get the data matrix that underlies our regression.  Here are the first 20 rows.
+
+```{r}
+head(model.matrix(birthwt.lm), 20)
+```
+
+Even though we think of the regression `birthwt.grams ~ race + mother.age` as being a regression on two variables (and an intercept), it's actually a regression on 3 variables (and an intercept).  This is because the `race` variable gets represented as two dummy variables: one for `race == other` and the other for `race == white`.  
+
+Why isn't there a column for representing the indicator of `race == black`?  This gets back to our colinearity issue.  By definition, we have that 
+
+<center>
+**raceblack + raceother + racewhite  =  1  =  (Intercept) **
+</center>
+<br>
+
+This is because for every observation, one and only one of the race dummy variables will equal 1.  Thus the group of 4 variables {raceblack, raceother, racewhite, (Intercept)} is perfectly colinear, and we can't include all 4 of them in the model.  The default behavior in R is to remove the dummy corresponding to the first level of the factor (here, raceblack), and to keep the rest.  
+
+
+# Interaction terms
+
+Let's go back to the regression line plot we generated above.
+
+```{r}
+qplot(x = mother.age, y = birthwt.grams, color = race, data = birthwt) + 
+  geom_abline(aes(intercept = intercepts, 
+                  slope = slopes, 
+                  color = race), data = lines.df)
+```
+
+We have seen similar plots before by using the `geom_smooth` or `stat_smooth` commands in `ggplot`.  Compare the plot above to the following.
+
+```{r}
+qplot(x = mother.age, y = birthwt.grams, color = race, data = birthwt) + stat_smooth(method = "lm", se = FALSE, fullrange = TRUE)
+```
+
+In this case we have not only race-specific intercepts, but also **race-specific slopes**.  The plot above corresponds to the model:
+
+<center>
+**Baby's birthweight = Intercept(based on mother's race) + $\beta$(based on mother's race) * mother's age**
+</center>
+<br>
+
+To specify this interaction model in R, we use the following syntax
+
+```{r}
+birthwt.lm.interact <- lm(birthwt.grams ~ race * mother.age, data = birthwt)
+
+summary(birthwt.lm.interact)
+```
+
+We now have new terms appearing.  Terms like `racewhite:mother.age` are deviations from the baseline slope (the coefficient of `mother.age` in the model) in the same way that terms like `racewhite` are deviations from the baseline intercept.  This models says that:
+
+> On average among black mothers, every additional year of age is associated with a `r abs(round(coef(birthwt.lm.interact)["mother.age"], 1))`g decrease in the birthweight of the baby.  
+
+To get the slope for white mothers, we need to add the interaction term to the baseline.
+
+slope(racewhite) = slope(raceblack) + racewhite:mother.age
+  = mother.age + racewhite:mother.age
+  = `r round(coef(birthwt.lm.interact)["mother.age"] + coef(birthwt.lm.interact)["racewhite:mother.age"], 1)`
+  
+  This slope estimate is positive, which agrees with the regression plot above.
+  
+
+-----
+
+# Extras 
+
+> In the remainder of these notes, you will learn how to test whether the interaction terms is significant. You are not expected to understand in depth the entire set of code and plots provided below; however, they help you answer that important question. 
+
+
+## Factors in linear regression
+
+### Interpreting coefficients of factor variables
+
+In the case of quantitative predictors, we're more or less comfortable with the interpretation of the linear model coefficient as a "slope" or a "unit increase in outcome per unit increase in the covariate".  This isn't the right interpretation for factor variables.  In particular, the notion of a slope or unit change no longer makes sense when talking about a categorical variable.  E.g., what does it even mean to say "unit increase in major" when studying the effect of college major on future earnings?
+
+To understand what the coefficients really mean, let's go back to the birthwt data and try regressing birthweight on mother's race and mother's age. 
+
+```{r}
+# Fit regression model
+birthwt.lm <- lm(birthwt.grams ~ race + mother.age, data = birthwt)
+
+# Regression model summary
+summary(birthwt.lm)
+```
+
+Note that there are two coefficients estimated for the race variable (`raceblack` and `raceother`).  What's happening here?  
+
+When you put a factor variable into a regression, you're allowing a **different intercept at every level of the factor**.  In the present example, you're saying that you want to model `birthwt.grams` as 
+
+<center>
+**Baby's birthweight = Intercept(based on mother's race) + $\beta$ * mother's age**
+</center>
+<br>
+We can rewrite this more succinctly as:
+$$
+y = \text{Intercept}_{race} + \beta \times \text{age}
+$$
+
+Essentially you're saying that your data is broken down into 3 racial groups, and you want to model your data as having the same slope governing how birthweight changes with mother's age, but potentially different intercepts.  Here's a picture of what's happening. 
+
+```{r}
+# Calculate race-specific intercepts
+intercepts <- c(coef(birthwt.lm)["(Intercept)"],
+                coef(birthwt.lm)["(Intercept)"] + coef(birthwt.lm)["raceblack"],
+                coef(birthwt.lm)["(Intercept)"] + coef(birthwt.lm)["raceother"])
+
+lines.df <- data.frame(intercepts = intercepts,
+                       slopes = rep(coef(birthwt.lm)["mother.age"], 3),
+                       race = levels(birthwt$race))
+
+lines.df
+
+qplot(x = mother.age, y = birthwt.grams, color = race, data = birthwt) + 
+  geom_abline(aes(intercept = intercepts, 
+                  slope = slopes, 
+                  color = race), data = lines.df)
+```
+
+How do we interpret the 2 race coefficients?  For categorical variables, the interpretation is relative to the given baseline.  The baseline is just whatever level comes first (here, "WHITE").  E.g., the estimate of `raceother` means that the estimated intercept is `r abs(round(coef(birthwt.lm)["raceother"], 0))`g lower among "OTHER" race mothers compared to WHITE mothers.  Similarly, the estimated intercept is `r abs(round(coef(birthwt.lm)["raceblack"],0))`g lower for BLACK mothers than WHITE mothers.
+
+> Another way of putting it:  Among mothers of the same age, babies of black mothers are born on average weighing `r abs(round(coef(birthwt.lm)["raceblack"], 0))`g less than babies of white mothers.
+
+> **Note**: If you look at the inline code chunks, you'll notice I'm using the `abs()` function to take the absolute value of the coefficients.  This is to avoid statements like: 
+
+Among mothers of the same age, babies of BLACK mothers are born on average weighing `r round(coef(birthwt.lm)["raceblack"], 0)`g less than babies of WHITE mothers.
+
+> This statement is not correct, because saying something like "-100g less" actually translates into "100g more".  
+
+### Why is one of the levels missing in the regression?  
+
+As you've already noticed, there is no coefficient called "racewhite" in the estimated model.  This is because this coefficient gets absorbed into the overall (Intercept) term.
+
+Let's peek under the hood.  Using the `model.matrix()` function on our linear model object, we can get the data matrix that underlies our regression.  Here are the first 20 rows.
+
+```{r}
+head(model.matrix(birthwt.lm), 20)
+```
+
+Even though we think of the regression `birthwt.grams ~ race + mother.age` as being a regression on two variables (and an intercept), it's actually a regression on 3 variables (and an intercept).  This is because the `race` variable gets represented as two dummy variables: one for `race == black` and the other for `race == other`.  
+
+Why isn't there a column for representing the indicator of `race == white`?  This gets back to our colinearity issue.  By definition, we have that 
+
+<center>
+**raceblack + raceother + racewhite  =  1  =  (Intercept) **
+</center>
+<br>
+
+This is because for every observation, one and only one of the race dummy variables will equal 1.  Thus the group of 4 variables {raceblack, raceother, racewhite, (Intercept)} is perfectly colinear, and we can't include all 4 of them in the model.  The default behavior in R is to remove the dummy corresponding to the first level of the factor (here, racewhite), and to keep the rest.  
+
+
+## Interaction terms
+
+Let's go back to the regression line plot we generated above.
+
+```{r}
+qplot(x = mother.age, y = birthwt.grams, color = race, data = birthwt) + 
+  geom_abline(aes(intercept = intercepts, 
+                  slope = slopes, 
+                  color = race), data = lines.df)
+```
+
+We have seen similar plots before by using the `geom_smooth` or `stat_smooth` commands in `ggplot`.  Compare the plot above to the following.
+
+```{r}
+qplot(x = mother.age, y = birthwt.grams, color = race, data = birthwt) +
+  stat_smooth(method = "lm", se = FALSE, fullrange = TRUE)
+
+qplot(x = mother.age, y = birthwt.grams, color = race, data = birthwt) +
+  stat_smooth(method = "lm")
+```
+
+In this case we have not only race-specific intercepts, but also **race-specific slopes**.  The plot above corresponds to the model:
+
+<center>
+**Baby's birthweight = Intercept(based on mother's race) + $\beta$(based on mother's race) * mother's age**
+</center>
+<br>
+
+We can rewrite this more succinctly as:
+$$
+y = \text{Intercept}_{race} + \beta_{race}\times \text{age}
+$$
+
+To specify this interaction model in R, we use the following syntax
+
+```{r}
+birthwt.lm.interact <- lm(birthwt.grams ~ race * mother.age, data = birthwt)
+
+summary(birthwt.lm.interact)
+```
+
+We now have new terms appearing.  Terms like `raceblack:mother.age` are deviations from the baseline slope (the coefficient of `mother.age` in the model) in the same way that terms like `raceblack` are deviations from the baseline intercept.  This models says that:
+
+> On average among WHITE mothers, every additional year of age is associated with a `r abs(round(coef(birthwt.lm.interact)["mother.age"], 1))`g INCREASE in the birthweight of the baby.  
+
+To get the slope for BLACK mothers, we need to add the interaction term to the baseline.
+
+$$
+  \begin{aligned}
+    \beta_{raceblack} &= \beta_{racewhite} + \beta_{raceblack:mother.age} \\ 
+                      &= \text{mother.age} + \text{raceblack:mother.age} \\
+                      &= `r round(coef(birthwt.lm.interact)["mother.age"], 1)` +
+                         (`r round(coef(birthwt.lm.interact)["raceblack:mother.age"], 1)`) \\
+                      &= `r round(coef(birthwt.lm.interact)["mother.age"] + coef(birthwt.lm.interact)["raceblack:mother.age"], 1)`
+  \end{aligned}
+$$
+  
+This slope estimate is NEGATIVE, which agrees with the regression plot above.
+
+
+## Is a categorical variable in a regression statistically significant?
+
+Last class we considered modelling birthweight as a linear function of mother's age, allowing for a race-specific intercept for each of the three race categories.  This model is fit again below.
+
+```{r}
+birthwt.lm <- lm(birthwt.grams ~ race + mother.age, data = birthwt)
+```
+
+Here's a visualization of the model fit that we wound up with.  Note that while there are 3 lines shown, this is a visualization of just one model:  `birthwt.grams ~ race + mother.age`.  This model produces 3 lines because the coefficients of the `race` variable result in different intercepts.
+
+```{r}
+# Calculate race-specific intercepts
+intercepts <- c(coef(birthwt.lm)["(Intercept)"],
+                coef(birthwt.lm)["(Intercept)"] + coef(birthwt.lm)["raceblack"],
+                coef(birthwt.lm)["(Intercept)"] + coef(birthwt.lm)["raceother"])
+
+lines.df <- data.frame(intercepts = intercepts,
+                       slopes = rep(coef(birthwt.lm)["mother.age"], 3),
+                       race = levels(birthwt$race))
+
+qplot(x = mother.age, y = birthwt.grams, color = race, data = birthwt) + 
+  geom_abline(aes(intercept = intercepts, 
+                  slope = slopes, 
+                  color = race), data = lines.df)
+```
+
+At this stage we may be interested in assessing whether the `race` variable is statistically significant.  i.e., Does including the `race` variable significantly improve the fit of our model, or is the simpler model `birthwt.grams ~ mother.age` just as good?
+
+Essentially, we want to know if the race-specific intercepts capture significantly more variation in the outcome (birthweight) than the single intercept model, or if allowing for different intercepts isn't doing much more than capturing random fluctuations in the data.
+
+Here's a picture of the two models we're comparing:
+
+```{r, fig.width = 10}
+library(gridExtra)
+plot.complex <- qplot(x = mother.age, y = birthwt.grams, 
+                      color = race, data = birthwt) + 
+  geom_abline(aes(intercept = intercepts, 
+                  slope = slopes, 
+                  color = race), data = lines.df)
+
+# Single intercept model (birthwt.grams ~ mother.age)
+p <- ggplot(birthwt, aes(x = mother.age, y = birthwt.grams))
+plot.simple <- p + geom_point(aes(colour = race)) + stat_smooth(method = "lm")
+
+grid.arrange(plot.complex, plot.simple, ncol = 2)
+```
+
+
+To test this hypothesis, we use the `anova` function (not to be confused with the `aov` function).  This function compares two **nested** models, accounting for their residual sums of squares (how well they fit the data) and their complexity (how many more variables are in the larger model) to assess statistical significance.  If you have seen "F" tests in regression or "likelihood ratio tests" before, this is the type of test we're performing with `anova`.  
+
+```{r}
+# Fit the simpler model with mother.age as the only predictor
+birthwt.lm.simple <- lm(birthwt.grams ~ mother.age, data = birthwt)
+
+# Compare to more complex model
+anova(birthwt.lm.simple, birthwt.lm)
+```
+
+This output tells us that the `race` variable is statistically significant:  It is unlikely that the improvement in fit when the add the `race` variable is simply due to random fluctuations in the data.  Thus it is important to consider race when modeling how birthweight depends on the mother's age.
+
+
+## Is an interaction term significant?
+
+Assessing significance of interaction terms operates on the same principle.  We once again ask whether the improvement in model fit is worth the increased complexity of our model.  For instance, consider the example we saw last class, where we allowed for a race-specific slope in addition to the race-specific intercept from before.
+
+```{r}
+birthwt.lm.interact <- lm(birthwt.grams ~ race * mother.age, data = birthwt)
+summary(birthwt.lm.interact)
+```
+
+Here's a side-by-side visual comparison of the `race + mother.age` model and the `race + mother.age + race*mother.age` interaction model.
+
+```{r, fig.width = 10}
+plot.interact <- qplot(x = mother.age, y = birthwt.grams, color = race, data = birthwt) + stat_smooth(method = "lm", se = FALSE, fullrange = TRUE)
+grid.arrange(plot.interact, plot.complex, ncol = 2)
+```
+
+So, do the lines with different slopes fit the data significantly better than the common slope model?  Let's compare the two with the `anova()` function.
+
+```{r}
+anova(birthwt.lm, birthwt.lm.interact)
+```
+
+This p-value turns out to not be statistically significant.  So even though the estimated slopes in the interaction model look very different, our estimates are quite variable, so we don't have enough evidence to conclude that the interaction term (different slopes) is providing significant additional explanatory power over the simpler `race + mother.age` model.
+
+## Is my complex model signficantly better than a simpler one?
+
+The testing strategy above applies to any two nested models.  Here's an example where we add in a few more variables and see how it compares to the `race + mother.age` model from earlier.
+
+```{r}
+birthwt.lm.complex <- lm(birthwt.grams ~ mother.smokes + physician.visits + race + mother.age, data = birthwt)
+
+summary(birthwt.lm.complex)
+```
+
+Let's compare to our earlier model:
+
+```{r}
+anova(birthwt.lm, birthwt.lm.complex)
+```
+
+Highly significant!  This is probably due to the fact that mother's smoking status has a tremendously high association with birthweight.  
+
+
+--- 
+
+# License
+
+This document  is created for Math 514, Spring 2021, at Illinois Tech. 
+While the course materials are generally not  to be distributed outside the course without permission of the instructor,  this particular set of notes is licensed under a [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+
+
+These notes are copied -- with minor edits -- from Prof. Alexandra Chouldechova at Carnegie Mellon University, which were  released under a Attribution-NonCommercial-ShareAlike 3.0 United States license.
+
+[![Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License][image]][hyperlink]
+
+  [hyperlink]: https://creativecommons.org/licenses/by-nc-sa/4.0/
+  [image]: https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png
+    
+
+

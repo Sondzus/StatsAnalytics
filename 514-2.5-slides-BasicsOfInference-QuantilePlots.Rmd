@@ -1,0 +1,188 @@
+---
+title: "Topic 2.3: basics of statistical inference"
+subtitle: Quantiles 
+author: |
+  | Sonja Petrović
+  | Created for ITMD/ITMS/STAT 514
+date: "Spring 2021." 
+urlcolor: darkblue
+output: 
+  beamer_presentation:
+    theme: "CambridgeUS"
+    colortheme: "beaver"
+    includes:
+      in_header: header_beamer.tex
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,comment = '', fig.align = 'center'  , out.width="50%"
+)
+knitr::include_graphics
+library(tigerstats)
+
+```
+
+
+# Theory 
+
+Discussion with the whiteboard. 
+
+## What we learned today: 
+Definition of a \attn{quantile}, and of \attn{quantile-quantile plot}. 
+
+
+# An excellent tiny example^[http://pages.stat.wisc.edu/~yandell/st571/R/append8.pdf]
+
+\redblock{{Objective}
+Use R to construct normal scores plots.
+}
+
+* This is done using the function `qqnorm`. 
+
+Please read the source pdf linked in the footnote to learn about the differences of output plots between different packages (flipped axes(!), small round-off variation, etc.). 
+
+--- 
+
+```{r}
+mydata = c(2.4, 3.7, 2.1, 3, 1.6, 2.5, 2.9)
+myquant = qqnorm(mydata)
+```
+\pause 
+
+* If the observations in mydata come from a normal distribution, then the above plot of mydata
+versus their population quantiles should give a straight line. 
+* It seems not unreasonable to
+conclude from this plot that the data come from a normal distribution.
+
+--- 
+
+* The object myquant contains the quantiles (`myquant$x`) and the original data (`myquant$y`).
+
+* The quantiles can be
+viewed by printing the object myquant as a data frame:
+
+```{r}
+data.frame(myquant)
+```
+
+# Example of `qqplot` 
+
+`qqplot` with birthweight data
+
+
+
+Let's begin by loading the packages we'll need to get started
+```{r}
+library(tidyverse)
+```
+
+# Exploring the birthweight data
+
+We'll begin by doing all the same data processing as in previous lectures
+
+```{r}
+# Load data from MASS into a tibble
+birthwt <- as_tibble(MASS::birthwt)
+
+# Rename variables
+birthwt <- birthwt %>%
+  rename(birthwt.below.2500 = low, 
+         mother.age = age,
+         mother.weight = lwt,
+         mother.smokes = smoke,
+         previous.prem.labor = ptl,
+         hypertension = ht,
+         uterine.irr = ui,
+         physician.visits = ftv,
+         birthwt.grams = bwt)
+```
+
+--- 
+
+```{r}
+# Change factor level names
+birthwt <- birthwt %>%
+  mutate(race = recode_factor(race, `1` = "white", 
+               `2` = "black", `3` = "other")) %>%
+  mutate_at(c("mother.smokes", "hypertension", 
+              "uterine.irr", "birthwt.below.2500"),
+            ~ recode_factor(.x, `0` = "no", `1` = "yes"))
+```
+
+# How this fits into the larger picture we're working on
+
+Over the past two lectures we created various tables and graphics to help us better understand the data.  Our focus for today is to run hypothesis tests to assess whether the trends we observed last time are statistically significant.
+
+One of the main reasons we want to understand hypothesis testing is that it is important for our tables and figures to convey statistical uncertainty in any cases where it is non-negligible, and where failing to account for it may produce misleading conclusions.  
+
+* we will learn a lot more, but for now let's test normality, as that's the focus of today's lecture! 
+
+# Is the data normal?
+
+I would recommend using a non-parametric test when the data appears highly non-normal and the sample size is small.  If you really want to stick to t-testing, it's good to know how to diagnose non-normality.  
+
+\redblock{{qq-plot}}
+
+The simplest thing to look at is a normal qq plot of the data.  This is obtained using the `stat_qq()` function.
+
+---
+
+\small
+```{r, fig.align='center', fig.width = 5, fig.height = 4}
+# qq plot
+p.birthwt <- ggplot(data = birthwt, 
+                    aes(sample = birthwt.grams))
+
+p.birthwt + stat_qq() + stat_qq_line()
+```
+
+---
+
+```{r}
+# Separate plots for different values of smoking status
+p.birthwt + stat_qq() + stat_qq_line() + 
+  facet_grid(. ~ mother.smokes)
+```
+---
+```{r}
+# qq plot for 115 observations of truly normal data
+df <- data.frame(x = rnorm(115))
+ggplot(data= df, aes(sample = x))+ stat_qq()+ stat_qq_line()
+```
+
+If the data are exactly normal, you expect the points to lie on a straight line.  The data we have here are pretty close to lying on a line.  
+
+--- 
+
+Here's what we would see if the data were right-skewed
+\small 
+```{r, fig.align='center', fig.width = 4, fig.height = 3}
+set.seed(12345)
+fake.data <- data.frame(x = rexp(200))
+p.fake <- ggplot(fake.data, aes(sample = x))
+qplot(x, data = fake.data)
+```
+---
+```{r}
+p.fake + stat_qq() + stat_qq_line()
+```
+
+If you construct a qqplot and it looks like this, you should be careful, particularly if your sample size is small.
+
+# What's next?
+
+* we will use the above dataset and qqplot when we perform a test of difference in means for this data. Stay tuned! 
+
+
+
+#  License  
+
+This document  is created for ITMD/ITMS/STAT 514, Spring 2021, at Illinois Tech. 
+
+While the course materials are generally not to be distributed outside the course without permission of the instructor, all materials posted on this page are licensed under a [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+
+The second part of the notes (about  qqplot with the birthweight data)
+is  extracted from  Prof. Alexandra Chouldechova at [CMU](https://www.andrew.cmu.edu/user/achoulde/94842/), under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International [License](https://creativecommons.org/licenses/by-nc-sa/4.0/).
