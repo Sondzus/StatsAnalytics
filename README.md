@@ -30,7 +30,7 @@ The course materials were developed during Fall 2020 and Spring 2021. Future upd
 
 #### Week 1 - Reasoning with data / framework for viewing data 
 
-* [lecture slides PDF](https://github.com/Sondzus/StatsAnalytics/blob/master/514-slides-day1-welcome.pdf)
+* [lecture slides PDF](514-slides-day1-welcome.pdf)
     * Additional notes on reasoning with data are written live. 
 * Interlude: create your first .Rmd file!   All of your HW will be submitted using markdown and html/pdf. Here are some templates, just so you know what to expect:
     * [514-hw-template.Rmd](514-hw-template.Rmd)
@@ -41,9 +41,7 @@ The course materials were developed during Fall 2020 and Spring 2021. Future upd
 
 #### Week 2  - Types of random variables, measures of location and scale, basic summary statistics 
 
-- Notes: 
-
-		* [514-1.1-handout-DescriptiveStatistics](514-1.1-handout-DescriptiveStatistics.html); [view plain html version](514-1.1-handout-DescriptiveStatistics-plainMarkdown.html) and the [source file .Rmd](514-1.1-handout-DescriptiveStatistics-plainMarkdown.Rmd)
+* [514-1.1-handout-DescriptiveStatistics](514-1.1-handout-DescriptiveStatistics.html); [view plain html version](514-1.1-handout-DescriptiveStatistics-plainMarkdown.html) and the [source file .Rmd](514-1.1-handout-DescriptiveStatistics-plainMarkdown.Rmd)
 		
 - Interlude: Overview of R&Python, packages, scripts, loading, basics, importing an example data set (part I)
 
