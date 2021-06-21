@@ -17,15 +17,16 @@ The course materials were developed during Fall 2020 and Spring 2021. Future upd
 
 
 ## Schedule 
-Week 1 - Reasoning with data / framework for viewing data 
+
+* Week 1 - Reasoning with data / framework for viewing data 
 	- Interlude: create your first .Rmd file
-Week 2 - Types of random variables, measures of location and scale, basic summary statistics 
+* Week 2 - Types of random variables, measures of location and scale, basic summary statistics 
 	- Interlude: Overview of R&Python, packages, scripts, loading, basics, importing an example data set
-Week 3 - Sampling distributions 
+* Week 3 - Sampling distributions 
 	- Interlude: Overview of Markdown and basic R functionality  
-Week 4 - The link between sampling distributions, inference, analytics, EDA 
+* Week 4 - The link between sampling distributions, inference, analytics, EDA 
 	- Interlude: functions in R. 
-Week 5 .....**TO BE FILLED OUT LATER.**
+* Week 5 .....**TO BE FILLED OUT LATER.**
 
 
 
