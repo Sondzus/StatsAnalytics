@@ -20,6 +20,7 @@ The course materials were developed during Fall 2020 and Spring 2021. Future upd
 
 * Week 1 - Reasoning with data / framework for viewing data 
 	- Interlude: create your first .Rmd file
+	- Notes: [514-0.1-handout-AboutRandPython](514-0.1-handout-AboutRandPython.html)
 * Week 2 - Types of random variables, measures of location and scale, basic summary statistics 
 	- Interlude: Overview of R&Python, packages, scripts, loading, basics, importing an example data set
 * Week 3 - Sampling distributions 
