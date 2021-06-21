@@ -5,7 +5,7 @@ Some of the notes for course materials on Applied Computational Statistics for A
 The course materials were developed during Fall 2020 and Spring 2021. Future updates will be posted as the course evolves. 
 
 ## Course info
-[Here](https://www.sonjapetrovicstats.com/teaching/514sp21) is the course homepage for the recent semester, Sprint 2021, which contains the course syllabus, topics, and more information. 
+[Here](https://www.sonjapetrovicstats.com/teaching/514sp21) is the course homepage for the recent semester, Spring 2021, which contains the course syllabus, topics, and more information. 
 
 ## Types of files
 
@@ -26,6 +26,8 @@ Week 3 - Sampling distributions
 Week 4 - The link between sampling distributions, inference, analytics, EDA 
 	- Interlude: functions in R. 
 Week 5 .....**TO BE FILLED OUT LATER.**
+
+
 
 ## License
 This folder and all the documents. within it  is created by Sonja Petrovic for ITMD/ITMS/STAT 514, Spring 2021, at Illinois Tech. 
