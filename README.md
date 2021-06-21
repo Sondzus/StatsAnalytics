@@ -5,7 +5,13 @@ Some of the notes for course materials on Applied Computational Statistics for A
 The course materials were developed during Fall 2020 and Spring 2021. Future updates will be posted as the course evolves. 
 
 ## Course info
-[Here](https://www.sonjapetrovicstats.com/teaching/514sp21) is the course homepage for the recent semester, Spring 2021, which contains the course syllabus, topics, and more information. 
+[Here is the course homepage](https://www.sonjapetrovicstats.com/teaching/514sp21) for  Spring 2021, which contains the course syllabus, topics, and more information, as well as: 
+
+* [Course policies](https://www.sonjapetrovicstats.com/teaching/514sp21/policies)
+* [Required coursework](https://www.sonjapetrovicstats.com/teaching/514sp21/required-coursework)
+* [How to succeed in this course](https://www.sonjapetrovicstats.com/teaching/514sp21/how-to-succeed-in-this-course)
+* [Help! Technical](https://www.sonjapetrovicstats.com/teaching/514sp21/help!-technical)
+* [Help! Logistics](https://www.sonjapetrovicstats.com/teaching/514sp21/help!-logistics)
 
 ## Types of files
 
