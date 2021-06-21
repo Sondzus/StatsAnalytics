@@ -1,0 +1,90 @@
+**Post-lecture update** 
+
+Here is the full set of slides, in format of a handout, where you can see **all** of the code you need to run the examples: 
+[514-2.7-handout-BasicsOfInference-ConfidenceIntervals.html](https://htmlpreview.github.io/?https://github.com/Sondzus/StatsAnalytics/blob/master/514-2.7-handout-BasicsOfInference-ConfidenceIntervals.html)
+
+------  
+
+**in-lecture update** : 
+
+The lecture example cannot be run without this code first, which is *not* shown in the slides: 
+ 
+```{r}
+# library("dplyr")  # need f or using sample_n  function below.
+sampl <- ames %>%
+  sample_n(size = 50) 
+``` 
+This is like going into the City Assessor’s database and pulling up the files on 50 random home sales. Working with these 50 files would be considerably simpler than working with all 2930 home sales.
+
+# Sampling distribution of `area`
+
+```{r}
+# library("ggplot2")
+ggplot(data = sampl, aes(x = Gr_Liv_Area)) + 
+  geom_histogram(binwidth = 100)
+```
+
+
+* What's your best guess, based only on this single sample, of an estimate of the average living area of houses sold in Ames? 
+
+# Point estimators (we won't use much)
+
+* What's your best guess, based only on this single sample, of an estimate of the average living area of houses sold in Ames? 
+  - $\overline{X}$ sample mean, or sample median: 
+```{r}
+sampl<-as_tibble(sampl)
+mean(sampl$Gr_Liv_Area)
+median(sampl$Gr_Liv_Area)
+```
+> this is called a **point estimator**. 
+
+# Interlude: which point estimator is 'better'? 
+
+```{r, include=FALSE}
+sample_means100 <- rep(NA, 5000)
+sample_medians100 <- rep(NA, 5000)
+for(i in 1:5000){
+  samp <- sample(area, 100)
+  sample_means100[i] <- mean(samp)
+  sample_medians100[i] <- median(samp)
+}
+```
+```{r, echo=FALSE,fig.height=3}
+par(mfrow = c(1,2))
+
+hist(sample_means100, breaks = 20, xlim = range(sample_means100), main="5000 sample means")
+hist(sample_medians100, breaks = 20, xlim = range(sample_medians100), main="5000 sample medians")
+```
+
+```{r sampleMeansVsMedian}
+# mean of sample mean:  (!)
+mean(sample_means100)
+# mean of sample median: 
+mean(sample_medians100)
+# population mean: 
+mean(area)
+```
+# Effect of sample size, revisited
+
+```{r, include=FALSE}
+sample_means10 <- rep(NA, 5000)
+sample_means50 <- rep(NA, 5000)
+sample_means100 <- rep(NA, 5000)
+
+for(i in 1:5000){
+  samp <- sample(area, 10)
+  sample_means10[i] <- mean(samp)
+  samp <- sample(area, 50)
+  sample_means50[i] <- mean(samp)
+  samp <- sample(area, 100)
+  sample_means100[i] <- mean(samp)
+}
+```
+
+```{r, echo=FALSE}
+par(mfrow = c(3, 1))
+xlimits <- range(sample_means10)
+hist(sample_means10, breaks = 20, xlim = xlimits, main="5000 sample means of samples of size 10")
+hist(sample_means50, breaks = 20, xlim = xlimits, main="5000 sample means of samples of size 50")
+hist(sample_means100, breaks = 20, xlim = xlimits, main="5000 sample means of samples of size 100")
+```

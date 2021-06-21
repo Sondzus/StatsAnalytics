@@ -1,0 +1,40 @@
+**Post-lecture update** 
+
+Here is the full set of slides, in format of a handout, where you can see **all** of the code you need to run the examples: 
+[514-2.7-handout-BasicsOfInference-ConfidenceIntervals.LocationProblemExamples.html](https://htmlpreview.github.io/?https://github.com/Sondzus/StatsAnalytics/blob/master/514-2.7-handout-BasicsOfInference-ConfidenceIntervals.LocationProblemExamples.html)
+
+------  
+
+**in-lecture update** : 
+
+
+# Application: Birhtweight: R
+
+```{r include=FALSE}
+library(tidyverse)
+birthwt <- as_tibble(MASS::birthwt)
+
+# Rename variables
+birthwt <- birthwt %>%
+  rename(birthwt.below.2500 = low, 
+         mother.age = age,
+         mother.weight = lwt,
+         mother.smokes = smoke,
+         previous.prem.labor = ptl,
+         hypertension = ht,
+         uterine.irr = ui,
+         physician.visits = ftv,
+         birthwt.grams = bwt)
+
+# Change factor level names
+birthwt <- birthwt %>%
+  mutate(race = recode_factor(race, `1` = "white", `2` = "black", `3` = "other")) %>%
+  mutate_at(c("mother.smokes", "hypertension", "uterine.irr", "birthwt.below.2500"),
+            ~ recode_factor(.x, `0` = "no", `1` = "yes"))
+```
+
+* Recall the data set: 
+```{r, size = 'tiny'}
+birthwt <- as_tibble(birthwt)
+birthwt
+```
